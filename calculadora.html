@@ -28,7 +28,7 @@
       color: #333;
     }
 
-     label {
+    label {
       display: block;
       margin-top: 10px;
       color: #555;
@@ -44,7 +44,7 @@
       color: #007bff; /* Cor do ícone */
     }
 
-    input, select, textarea { /* Adicionado textarea aqui */
+    input, select, textarea {
       width: 100%;
       max-width: 100%;
       padding: 10px;
@@ -52,6 +52,38 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       box-sizing: border-box;
+    }
+
+    .material-item-block {
+      border: 1px solid #e0e0e0;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      background-color: #fcfcfc;
+      position: relative;
+    }
+
+    .material-item-block .remove-item-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1; /* Para centralizar o ícone */
+    }
+
+    .material-item-block .remove-item-btn:hover {
+      background-color: #c82333;
     }
 
     /* Estilo específico para agrupar Serviço Adicional */
@@ -77,41 +109,6 @@
         flex-grow: 0;
     }
 
-    /* Estilos para os blocos de material dinâmicos */
-    .material-block {
-        border: 1px solid #e0e0e0;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
-        background-color: #fcfcfc;
-    }
-    .material-block h3 {
-        margin-top: 0;
-        color: #007bff;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .material-block .remove-material-block-btn {
-        background-color: #dc3545;
-        border: none;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9em;
-        width: auto; /* Para não ocupar 100% da largura */
-        margin-top: 10px;
-        align-self: flex-end; /* Alinhar à direita */
-    }
-    .material-block .remove-material-block-btn:hover {
-        background-color: #c82333;
-    }
-
-
     button {
       margin-top: 20px;
       width: 100%;
@@ -125,6 +122,13 @@
 
     button:hover {
       background-color: #0056b3;
+    }
+    
+    .add-item-btn {
+        background-color: #28a745;
+    }
+    .add-item-btn:hover {
+        background-color: #218838;
     }
 
     .result {
@@ -141,11 +145,10 @@
   <div class="container">
     <h1>Calculadora de corte CNC</h1>
 
-    <div id="material-blocks-container">
-      <div class="material-block" id="material-block-0">
-        <h3>Item <span class="item-number">1</span></h3>
+    <div id="material-items-container">
+      <div class="material-item-block" id="material-block-0">
         <label for="material_0"><i class="fas fa-box"></i> Material:</label>
-        <select id="material_0" class="material-select" onchange="updateMaterialInfo(this)">
+        <select id="material_0" onchange="updateMaterialInfo(this)">
           <option value="MDF_de_18mm">MDF de 18mm - 2750x1850mm (R$ 285,00)</option>
           <option value="MDF_de_6mm">MDF de 6mm - 2750x1850mm (R$ 150,00)</option>
           <option value="MDF_de_3mm">MDF de 3mm - 2750x1850mm (R$ 95,00)</option>
@@ -156,19 +159,16 @@
         </select>
 
         <label for="width_0"><i class="fas fa-ruler-horizontal"></i> Largura (mm):</label>
-        <input type="number" id="width_0" class="width-input" placeholder="Insira a largura">
+        <input type="number" id="width_0" placeholder="Insira a largura">
 
         <label for="height_0"><i class="fas fa-ruler-vertical"></i> Altura (mm):</label>
-        <input type="number" id="height_0" class="height-input" placeholder="Insira a altura">
+        <input type="number" id="height_0" placeholder="Insira a altura">
 
-        <label for="quantity_0"><i class="fas fa-layer-group"></i> Quantidade de Peças:</label>
-        <input type="number" id="quantity_0" class="quantity-input" value="1" min="1">
-
-        </div>
+        <button type="button" class="remove-item-btn" onclick="removeMaterialItem(this)" style="display:none;">&times;</button>
+      </div>
     </div>
 
-    <button type="button" onclick="addMaterialBlock()" style="margin-bottom: 20px;">Adicionar Novo Item</button>
-
+    <button type="button" class="add-item-btn" onclick="addMaterialItem()">Adicionar novo item</button>
 
     <label for="cutPrice"><i class="fas fa-cut"></i> Valor do corte CNC por m² (R$):</label>
     <input type="number" id="cutPrice" placeholder="Insira o valor do corte" value="50">
@@ -218,557 +218,82 @@
         Acrilico: { largura: 2000, altura: 1500, preco: 380.00, peso: 35.0 }
     };
 
-    let allCalculatedItems = []; // Armazena os detalhes de cada item calculado
-    let additionalInfoText = '';
-    let finalCalculatedTotal = 0; // Armazena o valor total final numérico
-    let itemCounter = 0; // Contador para IDs únicas dos blocos de material
+    // Adiciona a área da chapa a cada material para facilitar cálculos futuros
+    for (const key in materialData) {
+        if (materialData.hasOwnProperty(key)) {
+            materialData[key].areaChapa = (materialData[key].largura * materialData[key].altura) / 1000000;
+        }
+    }
 
-    // Função para atualizar os placeholders de largura/altura com base no material selecionado
+    let calculationDataForPDF = [];
+    let additionalInfoText = '';
+    let finalCalculatedTotal = 0;
+    let itemCounter = 0; // Para gerar IDs únicos para os blocos de material
+
     function updateMaterialInfo(selectElement) {
         const material = selectElement.value;
         const materialInfo = materialData[material];
         
-        // Encontra o bloco pai do selectElement
-        const materialBlock = selectElement.closest('.material-block');
-        if (materialBlock) {
-            const widthInput = materialBlock.querySelector('.width-input');
-            const heightInput = materialBlock.querySelector('.height-input');
+        // Encontra os inputs de largura e altura dentro do mesmo bloco
+        const block = selectElement.closest('.material-item-block');
+        const widthInput = block.querySelector('input[id^="width_"]');
+        const heightInput = block.querySelector('input[id^="height_"]');
 
-            if (widthInput) {
-                widthInput.placeholder = `Largura máxima: ${materialInfo.largura} mm`;
-            }
-            if (heightInput) {
-                heightInput.placeholder = `Altura máxima: ${materialInfo.altura} mm`;
-            }
+        if (widthInput && heightInput) {
+            widthInput.placeholder = `Largura máxima: ${materialInfo.largura} mm`;
+            heightInput.placeholder = `Altura máxima: ${materialInfo.altura} mm`;
         }
     }
 
-    // Função para adicionar um novo bloco de material
-    function addMaterialBlock() {
-        itemCounter++;
-        const container = document.getElementById('material-blocks-container');
-        const originalBlock = document.getElementById('material-block-0'); // Usamos o primeiro como template
+    function addMaterialItem() {
+        itemCounter++; // Incrementa o contador para o novo ID
 
-        // Clonar o bloco original para criar um novo
-        const newBlock = originalBlock.cloneNode(true);
-        newBlock.id = `material-block-${itemCounter}`;
-        newBlock.querySelector('.item-number').innerText = itemCounter + 1; // Atualiza o número do item
+        const container = document.getElementById('material-items-container');
+        const newItemBlock = document.createElement('div');
+        newItemBlock.className = 'material-item-block';
+        newItemBlock.id = `material-block-${itemCounter}`;
+        newItemBlock.innerHTML = `
+            <label for="material_${itemCounter}"><i class="fas fa-box"></i> Material:</label>
+            <select id="material_${itemCounter}" onchange="updateMaterialInfo(this)">
+                <option value="MDF_de_18mm">MDF de 18mm - 2750x1850mm (R$ 285,00)</option>
+                <option value="MDF_de_6mm">MDF de 6mm - 2750x1850mm (R$ 150,00)</option>
+                <option value="MDF_de_3mm">MDF de 3mm - 2750x1850mm (R$ 95,00)</option>
+                <option value="Madeira">Madeira - 2500x1500mm (R$ 320,00)</option>
+                <option value="ACM">ACM 3mm - 5000x1500mm (R$ 700,00)</option>
+                <option value="PVC_Expandido_de_25mm">PVC Expandido de 25mm - 2000x1000mm (R$ 750,00)</option>
+                <option value="Acrilico">Acrílico - 2000x1500mm (R$ 380,00)</option>
+            </select>
 
-        // Limpar os valores dos inputs do novo bloco
-        const inputs = newBlock.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            const oldId = input.id;
-            input.id = oldId.replace(/_\d+$/, `_${itemCounter}`); // Atualiza o ID
-            input.name = input.id; // Atualiza o name (importante para formulários)
-            if (input.type === 'number') {
-                input.value = ''; // Limpa o valor numérico
-                if (input.classList.contains('quantity-input')) {
-                    input.value = '1'; // Reseta a quantidade para 1
-                }
-            } else if (input.tagName === 'SELECT') {
-                input.value = originalBlock.querySelector('.material-select').value; // Mantém o material padrão
-                input.onchange = function() { updateMaterialInfo(this); }; // Reconecta o evento onchange
-            }
-        });
-        
-        // Adicionar botão de remover ao novo bloco
-        const removeButton = document.createElement('button');
-        removeButton.type = 'button';
-        removeButton.classList.add('remove-material-block-btn');
-        removeButton.innerText = 'Remover Item';
-        removeButton.onclick = function() { removeMaterialBlock(this); };
-        newBlock.querySelector('h3').appendChild(removeButton); // Adiciona o botão ao h3 para alinhamento
+            <label for="width_${itemCounter}"><i class="fas fa-ruler-horizontal"></i> Largura (mm):</label>
+            <input type="number" id="width_${itemCounter}" placeholder="Insira a largura">
 
-        container.appendChild(newBlock);
+            <label for="height_${itemCounter}"><i class="fas fa-ruler-vertical"></i> Altura (mm):</label>
+            <input type="number" id="height_${itemCounter}" placeholder="Insira a altura">
 
-        // Atualizar placeholders do novo bloco
-        updateMaterialInfo(newBlock.querySelector('.material-select'));
+            <button type="button" class="remove-item-btn" onclick="removeMaterialItem(this)">&times;</button>
+        `;
+        container.appendChild(newItemBlock);
+
+        // Atualiza o placeholder do novo item para o material padrão
+        const newSelect = document.getElementById(`material_${itemCounter}`);
+        updateMaterialInfo(newSelect);
     }
 
-    // Função para remover um bloco de material
-    function removeMaterialBlock(buttonElement) {
-        const blockToRemove = buttonElement.closest('.material-block');
-        blockToRemove.remove();
-        // Reajustar os números dos itens visíveis
-        const itemNumbers = document.querySelectorAll('.item-number');
-        itemNumbers.forEach((span, index) => {
-            span.innerText = index + 1;
-        });
-        // Recalcular para atualizar o resultado após remoção
-        calculateMaterial();
+    function removeMaterialItem(buttonElement) {
+        const itemBlock = buttonElement.closest('.material-item-block');
+        itemBlock.remove();
+        // Não é necessário reajustar itemCounter, apenas para IDs únicos
     }
-
 
     function calculateMaterial() {
-        let totalPrecoMaterialGeral = 0;
-        let totalPrecoCorteGeral = 0;
-        let totalAreaUsadaGeral = 0;
-        let totalPesoCalculadoGeral = 0;
-        allCalculatedItems = []; // Limpa a lista de itens calculados a cada novo cálculo
-
-        const materialBlocks = document.querySelectorAll('.material-block');
-
-        // Loop por cada bloco de material
-        materialBlocks.forEach((block, index) => {
-            const material = block.querySelector('.material-select').value;
-            const materialInfo = materialData[material];
-            const inputLargura = parseFloat(block.querySelector('.width-input').value);
-            const inputAltura = parseFloat(block.querySelector('.height-input').value);
-            const quantity = parseInt(block.querySelector('.quantity-input').value) || 1; // Quantidade de peças
-
-            // Verifica se as dimensões são válidas para o material atual
-            if (
-                !isNaN(inputLargura) && 
-                !isNaN(inputAltura) && 
-                inputLargura > 0 && 
-                inputAltura > 0 && 
-                inputLargura <= materialInfo.largura && 
-                inputAltura <= materialInfo.altura
-            ) {
-                const areaChapa = (materialInfo.largura * materialInfo.altura) / 1000000;
-                const areaUsadaPorPeca = (inputLargura * inputAltura) / 1000000;
-                const areaUsadaTotalItem = areaUsadaPorPeca * quantity; // Área total para este item
-                
-                // Calcula quantas chapas deste material são necessárias para este item
-                const sheetsNeededForThisItem = Math.ceil(areaUsadaTotalItem / areaChapa);
-                const precoMaterialItem = sheetsNeededForThisItem * materialInfo.preco;
-
-                const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
-                const precoCorteItem = areaUsadaTotalItem * precoCortePorMetroQuadrado;
-
-                const pesoPorM2 = materialInfo.peso / areaChapa;
-                const pesoCalculadoItem = areaUsadaTotalItem * pesoPorM2;
-
-                allCalculatedItems.push({
-                    itemNumber: index + 1,
-                    material: material,
-                    largura: inputLargura,
-                    altura: inputAltura,
-                    quantity: quantity,
-                    areaUsada: areaUsadaTotalItem,
-                    sheetsNeeded: sheetsNeededForThisItem,
-                    precoMaterial: precoMaterialItem,
-                    precoCorte: precoCorteItem,
-                    peso: pesoCalculadoItem
-                });
-
-                totalPrecoMaterialGeral += precoMaterialItem;
-                totalPrecoCorteGeral += precoCorteItem;
-                totalAreaUsadaGeral += areaUsadaTotalItem;
-                totalPesoCalculadoGeral += pesoCalculadoItem;
-
-            } else {
-                document.getElementById('result').innerHTML = `Erro no Item ${index + 1}: Por favor, insira dimensões válidas dentro dos limites do material selecionado.`;
-                document.getElementById('generatePDF').style.display = 'none';
-                return; // Para a execução se houver erro em algum item
-            }
-        });
-
-        // Captura os custos adicionais e descontos globais
-        const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
-        const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
-        const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
-        const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
-        const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
-        const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
-        const nomeCliente = document.getElementById('clientName').value;
-        const contatoCliente = document.getElementById('clientContact').value;
-        additionalInfoText = document.getElementById('additionalInfo').value.trim();
-
-
-        // Subtotal para cálculo do desconto (exclui o frete)
-        let subtotalForDiscount = totalPrecoMaterialGeral + totalPrecoCorteGeral + sandingCost + finishingCost + additionalServiceValue;
-
-        let discountAmount = 0;
-        if (discountPercentage > 0) {
-            discountAmount = subtotalForDiscount * (discountPercentage / 100);
-        }
-
-        // Preço total final (aplica o desconto e depois adiciona o frete)
-        let subtotalFinal = (subtotalForDiscount - discountAmount) + shippingCost;
-        finalCalculatedTotal = subtotalFinal; // Armazena o valor numérico total
-
-        let resultHtml = "";
-
-        // Detalhes por item
-        allCalculatedItems.forEach(item => {
-            resultHtml += `<h3>Item ${item.itemNumber} - ${item.material.replace(/_/g, ' ')}:</h3>`;
-            resultHtml += `Dimensões: ${item.largura}mm x ${item.altura}mm (${item.quantity} un)<br>`;
-            resultHtml += `Área Total Item: ${item.areaUsada.toFixed(4)} m²<br>`;
-            resultHtml += `Chap. Necessárias: ${item.sheetsNeeded}<br>`;
-            resultHtml += `Custo Material Item: R$ ${item.precoMaterial.toFixed(2)}<br>`;
-            resultHtml += `Custo Corte Item: R$ ${item.precoCorte.toFixed(2)}<br>`;
-            resultHtml += `Peso Estimado Item: ${item.peso.toFixed(2)} kg<br><br>`;
-        });
-
-        // Totais gerais
-        resultHtml += `<h2>Resumo Geral:</h2>`;
-        resultHtml += `Área Total de Corte: ${totalAreaUsadaGeral.toFixed(4)} m²<br>`;
-        resultHtml += `Peso Total Estimado: ${totalPesoCalculadoGeral.toFixed(2)} kg<br>`;
-        resultHtml += `Custo Total de Materiais: R$ ${totalPrecoMaterialGeral.toFixed(2)}<br>`;
-        resultHtml += `Custo Total de Cortes: R$ ${totalPrecoCorteGeral.toFixed(2)}<br>`;
-
-        if (sandingCost > 0) {
-            resultHtml += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}<br>`;
-        }
-        if (finishingCost > 0) {
-            resultHtml += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}<br>`;
-        }
-        if (additionalServiceValue > 0 || additionalServiceName) {
-            const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
-            resultHtml += `${serviceLabel}: R$ ${additionalServiceValue.toFixed(2)}<br>`;
-        }
-        if (discountPercentage > 0) {
-            resultHtml += `Desconto (${discountPercentage.toFixed(2)}%): -R$ ${discountAmount.toFixed(2)}<br>`;
-        }
-        if (shippingCost > 0) {
-            resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}<br>`;
-        }
-
-        resultHtml += `<b>PREÇO TOTAL FINAL: R$ ${finalCalculatedTotal.toFixed(2)}</b><br><br>`;
-
-        if (additionalInfoText) {
-            resultHtml += `<b>Informações Adicionais:</b><br>${additionalInfoText.replace(/\n/g, "<br>")}<br><br>`;
-        }
-
-        resultHtml += `<b>Cliente:</b> ${nomeCliente}<br><b>Contato:</b> ${contatoCliente}`;
-
-
-        document.getElementById('result').innerHTML = resultHtml;
-        document.getElementById('generatePDF').style.display = 'block';
+        // Lógica de cálculo será atualizada aqui em breve
+        // Por enquanto, apenas para evitar erros se for clicado antes do update
+        document.getElementById('result').innerHTML = "Calculando...";
+        document.getElementById('generatePDF').style.display = 'none';
     }
 
     async function generatePDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        const dataOrcamento = new Date();
-        const diaOrcamento = String(dataOrcamento.getDate()).padStart(2, '0');
-        const mesOrcamento = String(dataOrcamento.getMonth() + 1).padStart(2, '0');
-        const anoOrcamento = dataOrcamento.getFullYear();
-        const dataFormatadaOrcamento = `${diaOrcamento}/${mesOrcamento}/${anoOrcamento}`;
-
-        const dataExpiracao = new Date();
-        dataExpiracao.setDate(dataOrcamento.getDate() + 15);
-        const diaExpiracao = String(dataExpiracao.getDate()).padStart(2, '0');
-        const mesExpiracao = String(dataExpiracao.getMonth() + 1).padStart(2, '0');
-        const anoExpiracao = dataExpiracao.getFullYear();
-        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoOrcamento}`;
-
-        let clientName = document.getElementById('clientName').value.trim();
-        let fileName = "orcamento_corte_CNC.pdf";
-
-        if (clientName) {
-            clientName = clientName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/ /g, "_");
-            fileName = `${clientName}_orcamento_CNC.pdf`;
-        }
-
-        const logoImg = new Image();
-        logoImg.src = 'logo-calculadora1.png'; // Verifique se este nome está correto no seu GitHub!
-
-        logoImg.onload = () => {
-            doc.addImage(logoImg, 'PNG', 10, 10, 50, 20);
-
-            // Informações da Empresa (ao lado do logo)
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            const empresaInfoX = 70;
-            let empresaInfoY = 15;
-
-            doc.text("Site: www.vetorcut.com.br", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5;
-            doc.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5;
-            doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
-
-
-            let yPos = 40;
-
-            doc.setFontSize(16);
-            doc.text("Orçamento de Corte CNC", 10, yPos);
-            yPos += 10;
-
-            doc.setFontSize(12);
-            doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
-            yPos += 7;
-            doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
-            yPos += 10;
-
-            doc.setFontSize(11);
-            const col1X = 15;
-            const col2X = 185;
-
-            // Detalhes por item no PDF
-            allCalculatedItems.forEach(item => {
-                doc.setFont(undefined, 'bold');
-                doc.text(`Item ${item.itemNumber} - ${item.material.replace(/_/g, ' ')}:`, col1X, yPos);
-                yPos += 7;
-                doc.setFont(undefined, 'normal');
-                doc.text(`Dimensões: ${item.largura}mm x ${item.altura}mm (${item.quantity} un)`, col1X + 5, yPos);
-                yPos += 7;
-                doc.text(`Área Total Item: ${item.areaUsada.toFixed(4)} m²`, col1X + 5, yPos);
-                yPos += 7;
-                doc.text(`Chap. Necessárias: ${item.sheetsNeeded}`, col1X + 5, yPos);
-                yPos += 7;
-                doc.text(`Custo Material Item: R$ ${item.precoMaterial.toFixed(2)}`, col1X + 5, yPos);
-                yPos += 7;
-                doc.text(`Custo Corte Item: R$ ${item.precoCorte.toFixed(2)}`, col1X + 5, yPos);
-                yPos += 7;
-                doc.text(`Peso Estimado Item: ${item.peso.toFixed(2)} kg`, col1X + 5, yPos);
-                yPos += 10; // Espaço entre os itens
-            });
-
-            // Linha separadora antes dos totais
-            doc.line(col1X, yPos - 3, col2X, yPos - 3);
-            yPos += 2; // Ajuste de espaço após a linha
-
-            // Totais gerais no PDF
-            let totalAreaUsadaGeralPDF = 0;
-            let totalPesoCalculadoGeralPDF = 0;
-            let totalPrecoMaterialGeralPDF = 0;
-            let totalPrecoCorteGeralPDF = 0;
-
-            allCalculatedItems.forEach(item => {
-                totalAreaUsadaGeralPDF += item.areaUsada;
-                totalPesoCalculadoGeralPDF += item.peso;
-                totalPrecoMaterialGeralPDF += item.precoMaterial;
-                totalPrecoCorteGeralPDF += item.precoCorte;
-            });
-
-
-            doc.setFont(undefined, 'normal');
-            doc.text(`Área Total de Corte: ${totalAreaUsadaGeralPDF.toFixed(4)} m²`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Peso Total Estimado: ${totalPesoCalculadoGeralPDF.toFixed(2)} kg`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Custo Total de Materiais: R$ ${totalPrecoMaterialGeralPDF.toFixed(2)}`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Custo Total de Cortes: R$ ${totalPrecoCorteGeralPDF.toFixed(2)}`, col1X, yPos);
-            yPos += 7;
-
-            const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
-            const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
-            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
-            const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
-            const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
-            const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
-
-            if (sandingCost > 0) {
-                doc.text(`Custo de Lixamento: R$ ${sandingCost.toFixed(2)}`, col1X, yPos);
-                yPos += 7;
-            }
-            if (finishingCost > 0) {
-                doc.text(`Custo de Acabamento: R$ ${finishingCost.toFixed(2)}`, col1X, yPos);
-                yPos += 7;
-            }
-            if (additionalServiceValue > 0 || additionalServiceName) {
-                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
-                doc.text(`${serviceLabel}: R$ ${additionalServiceValue.toFixed(2)}`, col1X, yPos);
-                yPos += 7;
-            }
-
-            let subtotalForDiscountPDF = totalPrecoMaterialGeralPDF + totalPrecoCorteGeralPDF + sandingCost + finishingCost + additionalServiceValue;
-            let discountAmountPDF = 0;
-            if (discountPercentage > 0) {
-                discountAmountPDF = subtotalForDiscountPDF * (discountPercentage / 100);
-                doc.text(`Desconto (${discountPercentage.toFixed(2)}%): -R$ ${discountAmountPDF.toFixed(2)}`, col1X, yPos);
-                yPos += 7;
-            }
-
-            if (shippingCost > 0) {
-                doc.text(`Custo de Frete: R$ ${shippingCost.toFixed(2)}`, col1X, yPos);
-                yPos += 7;
-            }
-
-            doc.setFont(undefined, 'bold');
-            doc.text("PREÇO TOTAL FINAL:", col1X, yPos);
-            doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
-            yPos += 10;
-
-
-            if (additionalInfoText) {
-                yPos += 5;
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text("Informações Adicionais:", 10, yPos);
-                doc.setFont(undefined, 'normal');
-                yPos += 7;
-                const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180);
-                additionalInfoLines.forEach(line => {
-                    doc.text(line, 10, yPos);
-                    yPos += 7;
-                });
-            }
-
-            const nomeCliente = document.getElementById('clientName').value;
-            const contatoCliente = document.getElementById('clientContact').value;
-
-            yPos += 10;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text("Cliente:", 10, yPos);
-            doc.setFont(undefined, 'normal');
-            doc.text(nomeCliente, 30, yPos);
-            yPos += 7;
-            doc.setFont(undefined, 'bold');
-            doc.text("Contato:", 10, yPos);
-            doc.setFont(undefined, 'normal');
-            doc.text(contatoCliente, 30, yPos);
-
-            doc.save(fileName);
-        };
-
-        // Fallback para quando a imagem não carrega
-        logoImg.onerror = () => {
-            // Lógica de fallback similar à do onload, mas sem a imagem
-            // Para manter o código conciso, não vou repetir toda a estrutura aqui,
-            // mas seria o mesmo conteúdo de geração de PDF iniciando de um yPos mais alto.
-            // Para este exemplo, manterei a lógica de salvamento simples como fallback.
-            const docFallback = new jsPDF();
-            docFallback.setFontSize(12);
-            let yPosFallback = 10; // Posição inicial para o texto sem logo
-
-            docFallback.setFontSize(10);
-            docFallback.setFont(undefined, 'normal');
-            const empresaInfoX = 70; // Mantém a posição se a intenção é ter um "espaço" de logo
-            let empresaInfoY = 15;
-
-            docFallback.text("Site: www.vetorcut.com.br", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5;
-            docFallback.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5;
-            docFallback.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
-
-            yPosFallback = 40;
-            docFallback.setFontSize(16);
-            docFallback.text("Orçamento de Corte CNC", 10, yPosFallback);
-            yPosFallback += 10;
-
-            docFallback.setFontSize(12);
-            docFallback.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPosFallback);
-            yPosFallback += 7;
-            docFallback.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPosFallback);
-            yPosFallback += 10;
-
-            docFallback.setFontSize(11);
-            const col1X = 15;
-            const col2X = 185;
-
-            // Detalhes por item no PDF (fallback)
-            allCalculatedItems.forEach(item => {
-                docFallback.setFont(undefined, 'bold');
-                docFallback.text(`Item ${item.itemNumber} - ${item.material.replace(/_/g, ' ')}:`, col1X, yPosFallback);
-                yPosFallback += 7;
-                docFallback.setFont(undefined, 'normal');
-                docFallback.text(`Dimensões: ${item.largura}mm x ${item.altura}mm (${item.quantity} un)`, col1X + 5, yPosFallback);
-                yPosFallback += 7;
-                docFallback.text(`Área Total Item: ${item.areaUsada.toFixed(4)} m²`, col1X + 5, yPosFallback);
-                yPosFallback += 7;
-                docFallback.text(`Chap. Necessárias: ${item.sheetsNeeded}`, col1X + 5, yPosFallback);
-                yPosFallback += 7;
-                docFallback.text(`Custo Material Item: R$ ${item.precoMaterial.toFixed(2)}`, col1X + 5, yPosFallback);
-                yPosFallback += 7;
-                docFallback.text(`Custo Corte Item: R$ ${item.precoCorte.toFixed(2)}`, col1X + 5, yPosFallback);
-                yPosFallback += 7;
-                docFallback.text(`Peso Estimado Item: ${item.peso.toFixed(2)} kg`, col1X + 5, yPosFallback);
-                yPosFallback += 10;
-            });
-
-            docFallback.line(col1X, yPosFallback - 3, col2X, yPosFallback - 3);
-            yPosFallback += 2;
-
-            let totalAreaUsadaGeralFallback = 0;
-            let totalPesoCalculadoGeralFallback = 0;
-            let totalPrecoMaterialGeralFallback = 0;
-            let totalPrecoCorteGeralFallback = 0;
-
-            allCalculatedItems.forEach(item => {
-                totalAreaUsadaGeralFallback += item.areaUsada;
-                totalPesoCalculadoGeralFallback += item.peso;
-                totalPrecoMaterialGeralFallback += item.precoMaterial;
-                totalPrecoCorteGeralFallback += item.precoCorte;
-            });
-
-            docFallback.setFont(undefined, 'normal');
-            docFallback.text(`Área Total de Corte: ${totalAreaUsadaGeralFallback.toFixed(4)} m²`, col1X, yPosFallback);
-            yPosFallback += 7;
-            docFallback.text(`Peso Total Estimado: ${totalPesoCalculadoGeralFallback.toFixed(2)} kg`, col1X, yPosFallback);
-            yPosFallback += 7;
-            docFallback.text(`Custo Total de Materiais: R$ ${totalPrecoMaterialGeralFallback.toFixed(2)}`, col1X, yPosFallback);
-            yPosFallback += 7;
-            docFallback.text(`Custo Total de Cortes: R$ ${totalPrecoCorteGeralGeralFallback.toFixed(2)}`, col1X, yPosFallback);
-            yPosFallback += 7;
-
-            const sandingCostFallback = parseFloat(document.getElementById('sandingCost').value) || 0;
-            const finishingCostFallback = parseFloat(document.getElementById('finishingCost').value) || 0;
-            const shippingCostFallback = parseFloat(document.getElementById('shippingCost').value) || 0;
-            const discountPercentageFallback = parseFloat(document.getElementById('discountPercentage').value) || 0;
-            const additionalServiceNameFallback = document.getElementById('additionalServiceName').value.trim();
-            const additionalServiceValueFallback = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
-
-            if (sandingCostFallback > 0) {
-                docFallback.text(`Custo de Lixamento: R$ ${sandingCostFallback.toFixed(2)}`, col1X, yPosFallback);
-                yPosFallback += 7;
-            }
-            if (finishingCostFallback > 0) {
-                docFallback.text(`Custo de Acabamento: R$ ${finishingCostFallback.toFixed(2)}`, col1X, yPosFallback);
-                yPosFallback += 7;
-            }
-            if (additionalServiceValueFallback > 0 || additionalServiceNameFallback) {
-                const serviceLabel = additionalServiceNameFallback ? `Serv. Adicional (${additionalServiceNameFallback})` : 'Serviço Adicional';
-                docFallback.text(`${serviceLabel}: R$ ${additionalServiceValueFallback.toFixed(2)}`, col1X, yPosFallback);
-                yPosFallback += 7;
-            }
-
-            let subtotalForDiscountFallback = totalPrecoMaterialGeralFallback + totalPrecoCorteGeralFallback + sandingCostFallback + finishingCostFallback + additionalServiceValueFallback;
-            let discountAmountFallback = 0;
-            if (discountPercentageFallback > 0) {
-                discountAmountFallback = subtotalForDiscountFallback * (discountPercentageFallback / 100);
-                docFallback.text(`Desconto (${discountPercentageFallback.toFixed(2)}%): -R$ ${discountAmountFallback.toFixed(2)}`, col1X, yPosFallback);
-                yPosFallback += 7;
-            }
-
-            if (shippingCostFallback > 0) {
-                docFallback.text(`Custo de Frete: R$ ${shippingCostFallback.toFixed(2)}`, col1X, yPosFallback);
-                yPosFallback += 7;
-            }
-
-            docFallback.setFont(undefined, 'bold');
-            docFallback.text("PREÇO TOTAL FINAL:", col1X, yPosFallback);
-            docFallback.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPosFallback, { align: "right" });
-            yPosFallback += 10;
-
-            if (additionalInfoText) {
-                yPosFallback += 5;
-                docFallback.setFontSize(12);
-                docFallback.setFont(undefined, 'bold');
-                docFallback.text("Informações Adicionais:", 10, yPosFallback);
-                docFallback.setFont(undefined, 'normal');
-                yPosFallback += 7;
-                const additionalInfoLines = docFallback.splitTextToSize(additionalInfoText, 180);
-                additionalInfoLines.forEach(line => {
-                    docFallback.text(line, 10, yPosFallback);
-                    yPosFallback += 7;
-                });
-            }
-
-            const nomeClienteFallback = document.getElementById('clientName').value;
-            const contatoClienteFallback = document.getElementById('clientContact').value;
-
-            yPosFallback += 10;
-            docFallback.setFontSize(12);
-            docFallback.setFont(undefined, 'bold');
-            docFallback.text("Cliente:", 10, yPosFallback);
-            docFallback.setFont(undefined, 'normal');
-            docFallback.text(nomeClienteFallback, 30, yPosFallback);
-            yPosFallback += 7;
-            docFallback.setFont(undefined, 'bold');
-            docFallback.text("Contato:", 10, yPosFallback);
-            docFallback.setFont(undefined, 'normal');
-            docFallback.text(contatoClienteFallback, 30, yPosFallback);
-
-            docFallback.save(fileName);
-        };
+        // Lógica de PDF será atualizada aqui em breve
     }
 
     function formatPhone(input) {
@@ -780,9 +305,13 @@
         }
     }
 
-    // Inicializa o placeholder para o primeiro bloco ao carregar a página
-    window.onload = function() {
+    window.onload = () => {
         updateMaterialInfo(document.getElementById('material_0'));
+        // Exibe o botão de remover para os itens adicionados, mas mantém oculto para o primeiro
+        const firstRemoveBtn = document.querySelector('#material-block-0 .remove-item-btn');
+        if (firstRemoveBtn) {
+            firstRemoveBtn.style.display = 'none'; 
+        }
     };
 </script>
 
