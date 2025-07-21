@@ -174,6 +174,7 @@
 
     let calculationDataForPDF = [];
     let additionalInfoText = '';
+    let finalCalculatedTotal = 0; // Nova variável global para armazenar o total numérico
 
     function updateMaterialInfo() {
         const material = document.getElementById('material').value;
@@ -231,8 +232,9 @@
 
             // Preço total final (aplica o desconto e depois adiciona o frete)
             let subtotal = (subtotalForDiscount - discountAmount) + shippingCost;
+            finalCalculatedTotal = subtotal; // Armazena o valor numérico
 
-            const totalPreco = subtotal.toFixed(2);
+            const totalPrecoDisplay = subtotal.toFixed(2); // Valor formatado para exibição
 
             const pesoPorM2 = materialInfo.peso / areaChapa;
             const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2);
@@ -272,7 +274,7 @@
             if (shippingCost > 0) {
                 resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}<br>`;
             }
-            resultHtml += `<b>Preço Total: R$ ${totalPreco}</b><br>`;
+            resultHtml += `<b>Preço Total: R$ ${totalPrecoDisplay}</b><br>`;
 
 
             if (additionalInfoText) {
@@ -372,11 +374,10 @@
                 yPos += 7;
             }
 
-            // Adiciona o Preço Total
-            const totalPreco = (parseFloat(document.getElementById('result').innerText.match(/Preço Total: R\$ ([\d.,]+)/)[1].replace('.', '').replace(',', '.'))).toFixed(2); // Pega o valor do total já formatado
+            // Adiciona o Preço Total usando a variável global
             doc.setFont(undefined, 'bold');
             doc.text("Preço Total:", col1X, yPos);
-            doc.text(`R$ ${totalPreco}`, col2X, yPos, { align: "right" });
+            doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
             yPos += 7;
 
 
@@ -469,11 +470,10 @@
                 yPos += 7;
             }
 
-            // Adiciona o Preço Total
-            const totalPreco = (parseFloat(document.getElementById('result').innerText.match(/Preço Total: R\$ ([\d.,]+)/)[1].replace('.', '').replace(',', '.'))).toFixed(2);
+            // Adiciona o Preço Total usando a variável global
             doc.setFont(undefined, 'bold');
             doc.text("Preço Total:", col1X, yPos);
-            doc.text(`R$ ${totalPreco}`, col2X, yPos, { align: "right" });
+            doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
             yPos += 7;
             // --- Fim da Tabela de Detalhes (Fallback) ---
 
