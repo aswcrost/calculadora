@@ -148,7 +148,7 @@
         const inputAltura = parseFloat(document.getElementById('height').value);
         const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
         const nomeCliente = document.getElementById('clientName').value;
-        const contatoCliente = document.getElementById('clientContact').value;
+        const contatoCliente = document.getElementById('clientClient').value;
 
         if (
             !isNaN(inputLargura) && 
@@ -190,8 +190,18 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
+        // Obtém o nome do cliente e sanitiza para o nome do arquivo
+        let clientName = document.getElementById('clientName').value.trim();
+        let fileName = "calculo_orcamento.pdf"; // Nome de arquivo padrão
+
+        if (clientName) {
+            // Remove caracteres inválidos para nomes de arquivo e substitui espaços por underscores
+            clientName = clientName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/ /g, "_");
+            fileName = `${clientName}_orcamento.pdf`;
+        }
+
         const logoImg = new Image();
-        logoImg.src = 'logo-calculadora1.png'; // Nome do arquivo do logo atualizado aqui!
+        logoImg.src = 'logo-calculadora.png'; // Verifique se este nome corresponde ao arquivo em seu repositório!
 
         logoImg.onload = () => {
             // Adiciona o logo (ajuste as coordenadas e o tamanho conforme necessário)
@@ -210,7 +220,7 @@
                 yPos += 7; // Incrementa a posição Y para a próxima linha (ajuste o 7 para o espaçamento)
             });
 
-            doc.save("calculo_material.pdf");
+            doc.save(fileName); // Usa o nome de arquivo dinâmico aqui
         };
 
         logoImg.onerror = () => {
@@ -226,7 +236,7 @@
                 doc.text(line, 10, yPos);
                 yPos += 7;
             });
-            doc.save("calculo_material.pdf");
+            doc.save(fileName); // Usa o nome de arquivo dinâmico aqui mesmo em caso de erro
         };
     }
 
