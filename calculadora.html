@@ -148,7 +148,8 @@
         const inputAltura = parseFloat(document.getElementById('height').value);
         const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
         const nomeCliente = document.getElementById('clientName').value;
-        const contatoCliente = document.getElementById('clientClient').value;
+        // CORREÇÃO: clientClient para clientContact
+        const contatoCliente = document.getElementById('clientContact').value; 
 
         if (
             !isNaN(inputLargura) && 
@@ -201,7 +202,8 @@
         }
 
         const logoImg = new Image();
-        logoImg.src = 'logo-calculadora.png'; // Verifique se este nome corresponde ao arquivo em seu repositório!
+        // CORREÇÃO: Altere 'logo.png' para 'logo-calculadora.png' ou o nome exato do seu arquivo de logo no repositório.
+        logoImg.src = 'logo-calculadora.png'; 
 
         logoImg.onload = () => {
             // Adiciona o logo (ajuste as coordenadas e o tamanho conforme necessário)
