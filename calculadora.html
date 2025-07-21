@@ -255,13 +255,14 @@
                 calculationDataForPDF.push({ label: serviceLabel, value: `R$ ${additionalServiceValue.toFixed(2)}` });
             }
             
-            // Ordem alterada: Frete agora vem antes do desconto e do Preço Total
-            if (shippingCost > 0) {
-                calculationDataForPDF.push({ label: "Custo de Frete", value: `R$ ${shippingCost.toFixed(2)}` });
-            }
-
+            // A ordem foi alterada para que o Desconto venha antes do Custo de Frete
             if (discountPercentage > 0) {
                 calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}% (R$ ${discountAmount.toFixed(2)})` });
+            }
+
+            // O Custo de Frete agora vem antes do Preço Total, mas depois do Desconto
+            if (shippingCost > 0) {
+                calculationDataForPDF.push({ label: "Custo de Frete", value: `R$ ${shippingCost.toFixed(2)}` });
             }
             
             calculationDataForPDF.push({ label: "Preço Total", value: `R$ ${totalPreco}` });
