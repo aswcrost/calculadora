@@ -255,9 +255,9 @@
                 calculationDataForPDF.push({ label: serviceLabel, value: `R$ ${additionalServiceValue.toFixed(2)}` });
             }
 
-            // Desconto é adicionado aqui
+            // Desconto é adicionado aqui com o sinal de menos
             if (discountPercentage > 0) {
-                calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}% (R$ ${discountAmount.toFixed(2)})` });
+                calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}% (-R$ ${discountAmount.toFixed(2)})` });
             }
 
             // A linha "Custo de Frete" e "Preço Total" serão tratadas de forma especial no generatePDF()
@@ -373,7 +373,7 @@
             }
 
             // Adiciona o Preço Total
-            const totalPreco = (parseFloat(document.getElementById('result').innerText.match(/Preço Total: R\$ ([\d.]+)/)[1])).toFixed(2); // Pega o valor do total já formatado
+            const totalPreco = (parseFloat(document.getElementById('result').innerText.match(/Preço Total: R\$ ([\d.,]+)/)[1].replace('.', '').replace(',', '.'))).toFixed(2); // Pega o valor do total já formatado
             doc.setFont(undefined, 'bold');
             doc.text("Preço Total:", col1X, yPos);
             doc.text(`R$ ${totalPreco}`, col2X, yPos, { align: "right" });
@@ -470,7 +470,7 @@
             }
 
             // Adiciona o Preço Total
-            const totalPreco = (parseFloat(document.getElementById('result').innerText.match(/Preço Total: R\$ ([\d.]+)/)[1])).toFixed(2);
+            const totalPreco = (parseFloat(document.getElementById('result').innerText.match(/Preço Total: R\$ ([\d.,]+)/)[1].replace('.', '').replace(',', '.'))).toFixed(2);
             doc.setFont(undefined, 'bold');
             doc.text("Preço Total:", col1X, yPos);
             doc.text(`R$ ${totalPreco}`, col2X, yPos, { align: "right" });
