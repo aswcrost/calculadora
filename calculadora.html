@@ -115,9 +115,6 @@
     <label for="discountPercentage"><i class="fas fa-percent"></i> Desconto (%):</label>
     <input type="number" id="discountPercentage" placeholder="Opcional (ex: 10 para 10%)">
 
-    <label for="customTitle"><i class="fas fa-heading"></i> Título Personalizado:</label>
-    <input type="text" id="customTitle" placeholder="Ex: Orçamento Projeto XYZ (opcional)">
-
     <label for="additionalInfo"><i class="fas fa-info-circle"></i> Informações Adicionais:</label>
     <textarea id="additionalInfo" placeholder="Qualquer informação extra que queira adicionar (opcional)" rows="4"></textarea>
     <label for="clientName"><i class="fas fa-user"></i> Nome do Cliente:</label>
@@ -144,8 +141,7 @@
         Acrilico: { largura: 2000, altura: 1500, preco: 380.00, peso: 35.0 }
     };
 
-    let currentCalculationDetails = ''; // Renomeado para não confundir com a string final
-    let customTitleText = ''; // Variável para armazenar o título personalizado
+    let currentCalculationDetails = ''; 
     let additionalInfoText = ''; // Variável para armazenar as informações adicionais
 
     function updateMaterialInfo() {
@@ -175,8 +171,7 @@
         const nomeCliente = document.getElementById('clientName').value;
         const contatoCliente = document.getElementById('clientContact').value; 
 
-        // Captura os valores dos novos campos
-        customTitleText = document.getElementById('customTitle').value.trim();
+        // Captura o valor das informações adicionais
         additionalInfoText = document.getElementById('additionalInfo').value.trim();
 
         if (
@@ -281,14 +276,7 @@
             doc.addImage(logoImg, 'PNG', 10, 10, 50, 20); 
 
             let yPos = 40; 
-
-            // Adiciona o título personalizado, se existir
-            if (customTitleText) {
-                doc.setFontSize(14); // Tamanho um pouco menor que o título principal
-                doc.text(customTitleText, 10, yPos);
-                yPos += 10;
-            }
-
+            
             doc.setFontSize(16);
             doc.text("Orçamento de Corte CNC", 10, yPos); 
             yPos += 10; 
@@ -336,12 +324,6 @@
         logoImg.onerror = () => {
             let yPos = 10;
             
-            if (customTitleText) {
-                doc.setFontSize(14);
-                doc.text(customTitleText, 10, yPos);
-                yPos += 10;
-            }
-
             doc.setFontSize(16);
             doc.text("Orçamento de Corte CNC", 10, yPos);
             yPos += 10;
