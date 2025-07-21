@@ -143,12 +143,12 @@
 
     function calculateMaterial() {
         const material = document.getElementById('material').value;
-        const materialInfo = materialData[material];
-        const inputLargura = parseFloat(document.getElementById('width').value);
-        const inputAltura = parseFloat(document.getElementById('height').value);
-        const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
+        const materialInfo = materialData[material]; // Obtém todas as informações do material
+        const inputLargura = parseFloat(document.getElementById('width').value); // Converte para número
+        const inputAltura = parseFloat(document.getElementById('height').value); // Converte para número
+        const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value); // Converte para número
         const nomeCliente = document.getElementById('clientName').value;
-        // CORREÇÃO: clientClient para clientContact
+        // CORREÇÃO: clientClient para clientContact, conforme o ID do input no HTML
         const contatoCliente = document.getElementById('clientContact').value; 
 
         if (
@@ -159,16 +159,18 @@
             inputLargura <= materialInfo.largura && 
             inputAltura <= materialInfo.altura
         ) {
-            const areaChapa = (materialInfo.largura * materialInfo.altura) / 1000000;
-            const areaUsada = (inputLargura * inputAltura) / 1000000;
-            const precoPorM2 = materialInfo.preco / areaChapa;
-            const totalPrecoMaterial = areaUsada * precoPorM2;
-            const totalPrecoCorte = areaUsada * precoCortePorMetroQuadrado;
-            const totalPreco = (totalPrecoMaterial + totalPrecoCorte).toFixed(2);
+            const areaChapa = (materialInfo.largura * materialInfo.altura) / 1000000; // Área da chapa em m²
+            const areaUsada = (inputLargura * inputAltura) / 1000000; // Área usada em m²
+            const precoPorM2 = materialInfo.preco / areaChapa; // Preço por m² do material
+            const totalPrecoMaterial = areaUsada * precoPorM2; // Preço total do material
+            const totalPrecoCorte = areaUsada * precoCortePorMetroQuadrado; // Preço total do corte
+            const totalPreco = (totalPrecoMaterial + totalPrecoCorte).toFixed(2); // Preço total com corte
 
-            const pesoPorM2 = materialInfo.peso / areaChapa;
-            const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2);
+            // Cálculo do peso
+            const pesoPorM2 = materialInfo.peso / areaChapa; // Peso por m²
+            const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2); // Peso proporcional ao material usado
 
+            // Atualizar os resultados
             currentCalculation =
                 `Material: ${material}\n` +
                 `Área Utilizada: ${areaUsada.toFixed(4)} m²\n` +
@@ -182,6 +184,7 @@
             document.getElementById('result').innerHTML = currentCalculation.replace(/\n/g, "<br>");
             document.getElementById('generatePDF').style.display = 'block';
         } else {
+            // Mensagem de erro caso as dimensões sejam inválidas
             document.getElementById('result').innerHTML = "Por favor, insira dimensões válidas dentro dos limites do material.";
             document.getElementById('generatePDF').style.display = 'none';
         }
@@ -193,16 +196,17 @@
 
         // Obtém o nome do cliente e sanitiza para o nome do arquivo
         let clientName = document.getElementById('clientName').value.trim();
-        let fileName = "calculo_orcamento.pdf"; // Nome de arquivo padrão
+        let fileName = "orcamento_corte_CNC.pdf"; // Nome de arquivo padrão se o nome do cliente estiver vazio
 
         if (clientName) {
             // Remove caracteres inválidos para nomes de arquivo e substitui espaços por underscores
             clientName = clientName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/ /g, "_");
-            fileName = `${clientName}_orcamento.pdf`;
+            fileName = `${clientName}_orcamento_CNC.pdf`;
         }
 
         const logoImg = new Image();
-        // CORREÇÃO: Altere 'logo.png' para 'logo-calculadora.png' ou o nome exato do seu arquivo de logo no repositório.
+        // **IMPORTANTE:** Confirme que o nome 'logo-calculadora.png' é EXATO do seu arquivo de logo no GitHub.
+        // Se for diferente (ex: logo-calculadora1.png), você precisa ajustar esta linha.
         logoImg.src = 'logo-calculadora.png'; 
 
         logoImg.onload = () => {
