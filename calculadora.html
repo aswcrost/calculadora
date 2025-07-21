@@ -254,10 +254,12 @@
                 const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
                 calculationDataForPDF.push({ label: serviceLabel, value: `R$ ${additionalServiceValue.toFixed(2)}` });
             }
-            // Frete é adicionado antes do desconto e do total, conforme a estrutura atual já permite
+            
+            // Ordem alterada: Frete agora vem antes do desconto e do Preço Total
             if (shippingCost > 0) {
                 calculationDataForPDF.push({ label: "Custo de Frete", value: `R$ ${shippingCost.toFixed(2)}` });
             }
+
             if (discountPercentage > 0) {
                 calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}% (R$ ${discountAmount.toFixed(2)})` });
             }
@@ -299,7 +301,7 @@
         const diaExpiracao = String(dataExpiracao.getDate()).padStart(2, '0');
         const mesExpiracao = String(dataExpiracao.getMonth() + 1).padStart(2, '0');
         const anoExpiracao = dataExpiracao.getFullYear();
-        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoExpiracao}`;
+        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoOrcamento}`;
 
         let clientName = document.getElementById('clientName').value.trim();
         let fileName = "orcamento_corte_CNC.pdf"; 
@@ -316,19 +318,19 @@
             doc.addImage(logoImg, 'PNG', 10, 10, 50, 20); 
 
             // Informações da Empresa (ao lado do logo)
-            doc.setFontSize(10); // Tamanho da fonte para as informações da empresa
-            doc.setFont(undefined, 'normal'); // Certifica que não está em negrito
-            const empresaInfoX = 70; // Posição X para as informações da empresa
-            let empresaInfoY = 15; // Posição Y inicial para as informações da empresa
+            doc.setFontSize(10); 
+            doc.setFont(undefined, 'normal'); 
+            const empresaInfoX = 70; 
+            let empresaInfoY = 15; 
 
             doc.text("Site: www.vetorcut.com.br", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5; // Aumenta a posição Y para a próxima linha
+            empresaInfoY += 5; 
             doc.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
             empresaInfoY += 5;
             doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
 
 
-            let yPos = 40; // Posição Y para o título do orçamento
+            let yPos = 40; 
             
             doc.setFontSize(16);
             doc.text("Orçamento de Corte CNC", 10, yPos); 
@@ -342,8 +344,8 @@
 
             // --- Início da Tabela de Detalhes ---
             doc.setFontSize(11);
-            const col1X = 15; // Posição X para os rótulos
-            const col2X = 185; // Posição X para os valores (alinhado à direita)
+            const col1X = 15; 
+            const col2X = 185; 
 
             calculationDataForPDF.forEach(item => {
                 doc.setFont(undefined, 'normal'); 
