@@ -227,7 +227,7 @@
 
     let calculationDataForPDF = [];
     let additionalInfoText = '';
-    let finalCalculatedTotal = 0;
+    let finalCalculatedTotal = 0; // Armazena o total final numérico
     let itemCounter = 0; // Para gerar IDs únicos para os blocos de material
 
     function updateMaterialInfo(selectElement) {
@@ -283,17 +283,528 @@
         const itemBlock = buttonElement.closest('.material-item-block');
         itemBlock.remove();
         // Não é necessário reajustar itemCounter, apenas para IDs únicos
+        // Re-calcular após a remoção
+        calculateMaterial(); 
     }
 
     function calculateMaterial() {
-        // Lógica de cálculo será atualizada aqui em breve
-        // Por enquanto, apenas para evitar erros se for clicado antes do update
-        document.getElementById('result').innerHTML = "Calculando...";
-        document.getElementById('generatePDF').style.display = 'none';
+        let totalOverallMaterialCost = 0;
+        let totalOverallCuttingCost = 0;
+        let totalOverallArea = 0;
+        let totalOverallWeight = 0;
+        
+        calculationDataForPDF = []; // Limpa dados anteriores do PDF
+
+        const materialBlocks = document.querySelectorAll('.material-item-block');
+
+        // Loop através de cada bloco de material adicionado
+        materialBlocks.forEach((block, index) => {
+            const materialId = `material_${index}`;
+            const widthId = `width_${index}`;
+            const heightId = `height_${index}`;
+
+            const material = block.querySelector(`#${materialId}`).value;
+            const materialInfo = materialData[material];
+            const inputLargura = parseFloat(block.querySelector(`#${widthId}`).value);
+            const inputAltura = parseFloat(block.querySelector(`#${heightId}`).value);
+
+            // Validação para o bloco atual
+            if (
+                !isNaN(inputLargura) && 
+                !isNaN(inputAltura) && 
+                inputLargura > 0 && 
+                inputAltura > 0 && 
+                inputLargura <= materialInfo.largura && 
+                inputAltura <= materialInfo.altura
+            ) {
+                const areaUsada = (inputLargura * inputAltura) / 1000000;
+                const precoPorM2 = materialInfo.preco / materialInfo.areaChapa;
+                const materialCostPerBlock = areaUsada * precoPorM2;
+                const cuttingCostPerBlock = areaUsada * parseFloat(document.getElementById('cutPrice').value);
+                const pesoCalculadoPerBlock = (areaUsada * (materialInfo.peso / materialInfo.areaChapa));
+
+                totalOverallMaterialCost += materialCostPerBlock;
+                totalOverallCuttingCost += cuttingCostPerBlock;
+                totalOverallArea += areaUsada;
+                totalOverallWeight += pesoCalculadoPerBlock;
+
+                // Adiciona os detalhes de cada item para possível exibição no PDF (se necessário)
+                calculationDataForPDF.push({
+                    label: `Item ${index + 1} (${material})`,
+                    area: areaUsada.toFixed(4),
+                    weight: pesoCalculadoPerBlock.toFixed(2),
+                    materialPrice: materialCostPerBlock.toFixed(2),
+                    cutPrice: cuttingCostPerBlock.toFixed(2)
+                });
+
+            } else {
+                // Se um bloco tem dimensões inválidas, exibe um alerta e para o cálculo
+                document.getElementById('result').innerHTML = `Erro no Item ${index + 1}: Insira dimensões válidas dentro dos limites do material selecionado.`;
+                document.getElementById('generatePDF').style.display = 'none';
+                return; // Sai da função se houver erro
+            }
+        });
+
+        // Se houverem blocos de material válidos para calcular
+        if (materialBlocks.length > 0) {
+            const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
+            const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
+            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+            const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
+
+            const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
+            const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
+
+            const nomeCliente = document.getElementById('clientName').value;
+            const contatoCliente = document.getElementById('clientContact').value;
+
+            additionalInfoText = document.getElementById('additionalInfo').value.trim();
+
+            let subtotalForDiscount = totalOverallMaterialCost + totalOverallCuttingCost + sandingCost + finishingCost + additionalServiceValue;
+
+            let discountAmount = 0;
+            if (discountPercentage > 0) {
+                discountAmount = subtotalForDiscount * (discountPercentage / 100);
+            }
+
+            let subtotal = (subtotalForDiscount - discountAmount) + shippingCost;
+            finalCalculatedTotal = subtotal; // Armazena o valor numérico total
+
+            let resultHtml = `<b>Resumo do Orçamento:</b><br><br>`;
+            resultHtml += `Área Total Utilizada: ${totalOverallArea.toFixed(4)} m²<br>`;
+            resultHtml += `Peso Estimado Total: ${totalOverallWeight.toFixed(2)} kg<br>`;
+            resultHtml += `Preço Total de Material: R$ ${totalOverallMaterialCost.toFixed(2)}<br>`;
+            resultHtml += `Preço Total de Corte: R$ ${totalOverallCuttingCost.toFixed(2)}<br>`;
+
+            if (sandingCost > 0) {
+                resultHtml += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}<br>`;
+            }
+            if (finishingCost > 0) {
+                resultHtml += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}<br>`;
+            }
+            if (additionalServiceValue > 0 || additionalServiceName) {
+                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
+                resultHtml += `${serviceLabel}: R$ ${additionalServiceValue.toFixed(2)}<br>`;
+            }
+            if (discountPercentage > 0) {
+                resultHtml += `Desconto: ${discountPercentage.toFixed(2)}% (-R$ ${discountAmount.toFixed(2)})<br>`;
+            }
+            if (shippingCost > 0) {
+                resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}<br>`;
+            }
+            resultHtml += `<b>Preço Total Final: R$ ${finalCalculatedTotal.toFixed(2)}</b><br>`;
+
+            if (additionalInfoText) {
+                resultHtml += `<br><br><b>Informações Adicionais:</b><br>${additionalInfoText.replace(/\n/g, "<br>")}`;
+            }
+
+            resultHtml += `<br><br><b>Cliente:</b> ${nomeCliente}<br><b>Contato:</b> ${contatoCliente}`;
+
+            document.getElementById('result').innerHTML = resultHtml;
+            document.getElementById('generatePDF').style.display = 'block';
+
+        } else {
+            document.getElementById('result').innerHTML = "Por favor, adicione pelo menos um item de material para calcular.";
+            document.getElementById('generatePDF').style.display = 'none';
+        }
     }
 
     async function generatePDF() {
-        // Lógica de PDF será atualizada aqui em breve
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const dataOrcamento = new Date();
+        const diaOrcamento = String(dataOrcamento.getDate()).padStart(2, '0');
+        const mesOrcamento = String(dataOrcamento.getMonth() + 1).padStart(2, '0');
+        const anoOrcamento = dataOrcamento.getFullYear();
+        const dataFormatadaOrcamento = `${diaOrcamento}/${mesOrcamento}/${anoOrcamento}`;
+
+        const dataExpiracao = new Date();
+        dataExpiracao.setDate(dataOrcamento.getDate() + 15);
+        const diaExpiracao = String(dataExpiracao.getDate()).padStart(2, '0');
+        const mesExpiracao = String(dataExpiracao.getMonth() + 1).padStart(2, '0');
+        const anoExpiracao = dataExpiracao.getFullYear();
+        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoOrcamento}`;
+
+        let clientName = document.getElementById('clientName').value.trim();
+        let fileName = "orcamento_corte_CNC.pdf";
+
+        if (clientName) {
+            clientName = clientName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/ /g, "_");
+            fileName = `${clientName}_orcamento_CNC.pdf`;
+        }
+
+        const logoImg = new Image();
+        logoImg.src = 'logo-calculadora1.png'; // Verifique se este nome está correto no seu GitHub!
+
+        logoImg.onload = () => {
+            doc.addImage(logoImg, 'PNG', 10, 10, 50, 20);
+
+            // Informações da Empresa (ao lado do logo)
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const empresaInfoX = 70;
+            let empresaInfoY = 15;
+
+            doc.text("Site: www.vetorcut.com.br", empresaInfoX, empresaInfoY);
+            empresaInfoY += 5;
+            doc.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
+            empresaInfoY += 5;
+            doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
+
+
+            let yPos = 40;
+
+            doc.setFontSize(16);
+            doc.text("Orçamento de Corte CNC", 10, yPos);
+            yPos += 10;
+
+            doc.setFontSize(12);
+            doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
+            yPos += 7;
+            doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
+            yPos += 10;
+
+            // --- Início da Tabela de Detalhes ---
+            doc.setFontSize(11);
+            const col1X = 15;
+            const col2X = 185;
+
+            // Variáveis para somar os totais para o PDF
+            let totalPdfMaterialPrice = 0;
+            let totalPdfCutPrice = 0;
+            let totalPdfArea = 0;
+            let totalPdfWeight = 0;
+
+            // Adiciona cada item individualmente no PDF, se `calculationDataForPDF` for populado assim
+            // Se a intenção é só exibir o total, essa parte pode ser removida e só usar os totais agregados
+            // O usuário pediu "apenas somar as coisas", então vamos somar para o display final
+            
+            // Recalcula os totais aqui para garantir que estão atualizados
+            const materialBlocks = document.querySelectorAll('.material-item-block');
+            materialBlocks.forEach((block, index) => {
+                const materialId = `material_${index}`;
+                const widthId = `width_${index}`;
+                const heightId = `height_${index}`;
+
+                const material = block.querySelector(`#${materialId}`).value;
+                const materialInfo = materialData[material];
+                const inputLargura = parseFloat(block.querySelector(`#${widthId}`).value);
+                const inputAltura = parseFloat(block.querySelector(`#${heightId}`).value);
+
+                if (!isNaN(inputLargura) && !isNaN(inputAltura) && inputLargura > 0 && inputAltura > 0 && inputLargura <= materialInfo.largura && inputAltura <= materialInfo.altura) {
+                    const areaUsada = (inputLargura * inputAltura) / 1000000;
+                    const precoPorM2 = materialInfo.preco / materialInfo.areaChapa;
+                    const materialCostPerBlock = areaUsada * precoPorM2;
+                    const cuttingCostPerBlock = areaUsada * parseFloat(document.getElementById('cutPrice').value);
+                    const pesoCalculadoPerBlock = (areaUsada * (materialInfo.peso / materialInfo.areaChapa));
+
+                    totalPdfMaterialPrice += materialCostPerBlock;
+                    totalPdfCutPrice += cuttingCostPerBlock;
+                    totalPdfArea += areaUsada;
+                    totalPdfWeight += pesoCalculadoPerBlock;
+
+                    // Exibir detalhes de cada item no PDF (opcional, mas útil para ver a composição)
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Item ${index + 1} (${material}):`, col1X, yPos);
+                    yPos += 7;
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`  Área Utilizada: ${areaUsada.toFixed(4)} m²`, col1X + 5, yPos);
+                    doc.text(`  Peso Estimado: ${pesoCalculadoPerBlock.toFixed(2)} kg`, col2X, yPos, { align: "right" });
+                    yPos += 7;
+                    doc.text(`  Preço Material: R$ ${materialCostPerBlock.toFixed(2)}`, col1X + 5, yPos);
+                    doc.text(`  Preço Corte: R$ ${cuttingCostPerBlock.toFixed(2)}`, col2X, yPos, { align: "right" });
+                    yPos += 10; // Espaço extra entre os itens
+                }
+            });
+
+
+            // Adiciona os totais agregados
+            doc.setFont(undefined, 'bold');
+            doc.text("Resumo Geral:", col1X, yPos);
+            yPos += 7;
+            doc.setFont(undefined, 'normal');
+            doc.text(`Área Total Utilizada: ${totalPdfArea.toFixed(4)} m²`, col1X, yPos);
+            yPos += 7;
+            doc.text(`Peso Estimado Total: ${totalPdfWeight.toFixed(2)} kg`, col1X, yPos);
+            yPos += 7;
+            doc.text(`Preço Total de Material: R$ ${totalPdfMaterialPrice.toFixed(2)}`, col1X, yPos);
+            yPos += 7;
+            doc.text(`Preço Total de Corte: R$ ${totalPdfCutPrice.toFixed(2)}`, col1X, yPos);
+            yPos += 7;
+
+            // Linha divisória antes dos custos adicionais
+            doc.line(col1X, yPos - 3, col2X, yPos - 3);
+            yPos += 2;
+
+
+            const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
+            const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
+            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+            const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
+            const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
+            const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
+
+            if (sandingCost > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Custo de Lixamento:", col1X, yPos);
+                doc.text(`R$ ${sandingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            if (finishingCost > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Custo de Acabamento:", col1X, yPos);
+                doc.text(`R$ ${finishingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            if (additionalServiceValue > 0 || additionalServiceName) {
+                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
+                doc.setFont(undefined, 'normal');
+                doc.text(`${serviceLabel}:`, col1X, yPos);
+                doc.text(`R$ ${additionalServiceValue.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            // Cálculo do desconto para o PDF (precisa ser feito aqui novamente para garantir consistência)
+            let subtotalForDiscountPdf = totalPdfMaterialPrice + totalPdfCutPrice + sandingCost + finishingCost + additionalServiceValue;
+            let discountAmountPdf = 0;
+            if (discountPercentage > 0) {
+                discountAmountPdf = subtotalForDiscountPdf * (discountPercentage / 100);
+            }
+
+            if (discountPercentage > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Desconto:", col1X, yPos);
+                doc.text(`${discountPercentage.toFixed(2)}% (-R$ ${discountAmountPdf.toFixed(2)})`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            if (shippingCost > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Custo de Frete:", col1X, yPos);
+                doc.text(`R$ ${shippingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+
+            // Adiciona o Preço Total FINAL usando a variável global que já está atualizada
+            doc.setFont(undefined, 'bold');
+            doc.text("Preço Total Final:", col1X, yPos);
+            doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
+            yPos += 7;
+
+
+            // --- Fim da Tabela de Detalhes ---
+
+            // Adiciona as informações adicionais, se existirem
+            if (additionalInfoText) {
+                yPos += 10;
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text("Informações Adicionais:", 10, yPos);
+                doc.setFont(undefined, 'normal');
+                yPos += 7;
+                const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180);
+                additionalInfoLines.forEach(line => {
+                    doc.text(line, 10, yPos);
+                    yPos += 7;
+                });
+            }
+
+            // Adiciona informações do cliente
+            const nomeCliente = document.getElementById('clientName').value;
+            const contatoCliente = document.getElementById('clientContact').value;
+
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text("Cliente:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(nomeCliente, 30, yPos);
+            yPos += 7;
+            doc.setFont(undefined, 'bold');
+            doc.text("Contato:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(contatoCliente, 30, yPos);
+
+            doc.save(fileName);
+        };
+
+        // Fallback para quando a imagem não carrega (caso o logo não seja encontrado)
+        logoImg.onerror = () => {
+            let yPos = 10;
+
+            // Informações da Empresa (ao lado do logo - fallback)
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const empresaInfoX = 70;
+            let empresaInfoY = 15;
+
+            doc.text("Site: www.vetorcut.com.br", empresaInfoX, empresaInfoY);
+            empresaInfoY += 5;
+            doc.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
+            empresaInfoY += 5;
+            doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
+
+            // Se o logo não carregou, o título do orçamento começa mais cedo
+            yPos = 40;
+            doc.setFontSize(16);
+            doc.text("Orçamento de Corte CNC", 10, yPos);
+            yPos += 10;
+
+            doc.setFontSize(12);
+            doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
+            yPos += 7;
+            doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
+            yPos += 10;
+
+            // --- Início da Tabela de Detalhes (Fallback) ---
+            doc.setFontSize(11);
+            const col1X = 15;
+            const col2X = 185;
+
+            // Variáveis para somar os totais para o PDF (fallback)
+            let totalPdfMaterialPrice = 0;
+            let totalPdfCutPrice = 0;
+            let totalPdfArea = 0;
+            let totalPdfWeight = 0;
+            
+            // Recalcula os totais aqui para garantir que estão atualizados (fallback)
+            const materialBlocks = document.querySelectorAll('.material-item-block');
+            materialBlocks.forEach((block, index) => {
+                const materialId = `material_${index}`;
+                const widthId = `width_${index}`;
+                const heightId = `height_${index}`;
+
+                const material = block.querySelector(`#${materialId}`).value;
+                const materialInfo = materialData[material];
+                const inputLargura = parseFloat(block.querySelector(`#${widthId}`).value);
+                const inputAltura = parseFloat(block.querySelector(`#${heightId}`).value);
+
+                if (!isNaN(inputLargura) && !isNaN(inputAltura) && inputLargura > 0 && inputAltura > 0 && inputLargura <= materialInfo.largura && inputAltura <= materialInfo.altura) {
+                    const areaUsada = (inputLargura * inputAltura) / 1000000;
+                    const precoPorM2 = materialInfo.preco / materialInfo.areaChapa;
+                    const materialCostPerBlock = areaUsada * precoPorM2;
+                    const cuttingCostPerBlock = areaUsada * parseFloat(document.getElementById('cutPrice').value);
+                    const pesoCalculadoPerBlock = (areaUsada * (materialInfo.peso / materialInfo.areaChapa));
+
+                    totalPdfMaterialPrice += materialCostPerBlock;
+                    totalPdfCutPrice += cuttingCostPerBlock;
+                    totalPdfArea += areaUsada;
+                    totalPdfWeight += pesoCalculadoPerBlock;
+
+                    // Exibir detalhes de cada item no PDF (opcional, mas útil para ver a composição)
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Item ${index + 1} (${material}):`, col1X, yPos);
+                    yPos += 7;
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`  Área Utilizada: ${areaUsada.toFixed(4)} m²`, col1X + 5, yPos);
+                    doc.text(`  Peso Estimado: ${pesoCalculadoPerBlock.toFixed(2)} kg`, col2X, yPos, { align: "right" });
+                    yPos += 7;
+                    doc.text(`  Preço Material: R$ ${materialCostPerBlock.toFixed(2)}`, col1X + 5, yPos);
+                    doc.text(`  Preço Corte: R$ ${cuttingCostPerBlock.toFixed(2)}`, col2X, yPos, { align: "right" });
+                    yPos += 10; // Espaço extra entre os itens
+                }
+            });
+
+            // Adiciona os totais agregados (fallback)
+            doc.setFont(undefined, 'bold');
+            doc.text("Resumo Geral:", col1X, yPos);
+            yPos += 7;
+            doc.setFont(undefined, 'normal');
+            doc.text(`Área Total Utilizada: ${totalPdfArea.toFixed(4)} m²`, col1X, yPos);
+            yPos += 7;
+            doc.text(`Peso Estimado Total: ${totalPdfWeight.toFixed(2)} kg`, col1X, yPos);
+            yPos += 7;
+            doc.text(`Preço Total de Material: R$ ${totalPdfMaterialPrice.toFixed(2)}`, col1X, yPos);
+            yPos += 7;
+            doc.text(`Preço Total de Corte: R$ ${totalPdfCutPrice.toFixed(2)}`, col1X, yPos);
+            yPos += 7;
+
+            // Linha divisória antes dos custos adicionais (fallback)
+            doc.line(col1X, yPos - 3, col2X, yPos - 3);
+            yPos += 2;
+
+            const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
+            const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
+            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+            const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
+            const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
+            const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
+
+            if (sandingCost > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Custo de Lixamento:", col1X, yPos);
+                doc.text(`R$ ${sandingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            if (finishingCost > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Custo de Acabamento:", col1X, yPos);
+                doc.text(`R$ ${finishingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            if (additionalServiceValue > 0 || additionalServiceName) {
+                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
+                doc.setFont(undefined, 'normal');
+                doc.text(`${serviceLabel}:`, col1X, yPos);
+                doc.text(`R$ ${additionalServiceValue.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            // Cálculo do desconto para o PDF (fallback)
+            let subtotalForDiscountPdf = totalPdfMaterialPrice + totalPdfCutPrice + sandingCost + finishingCost + additionalServiceValue;
+            let discountAmountPdf = 0;
+            if (discountPercentage > 0) {
+                discountAmountPdf = subtotalForDiscountPdf * (discountPercentage / 100);
+            }
+
+            if (discountPercentage > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Desconto:", col1X, yPos);
+                doc.text(`${discountPercentage.toFixed(2)}% (-R$ ${discountAmountPdf.toFixed(2)})`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+            if (shippingCost > 0) {
+                doc.setFont(undefined, 'normal');
+                doc.text("Custo de Frete:", col1X, yPos);
+                doc.text(`R$ ${shippingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
+                yPos += 7;
+            }
+
+            // Adiciona o Preço Total FINAL usando a variável global que já está atualizada (fallback)
+            doc.setFont(undefined, 'bold');
+            doc.text("Preço Total Final:", col1X, yPos);
+            doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
+            yPos += 7;
+
+            if (additionalInfoText) {
+                yPos += 10;
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text("Informações Adicionais:", 10, yPos);
+                doc.setFont(undefined, 'normal');
+                yPos += 7;
+                const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180);
+                additionalInfoLines.forEach(line => {
+                    doc.text(line, 10, yPos);
+                    yPos += 7;
+                });
+            }
+
+            const nomeCliente = document.getElementById('clientName').value;
+            const contatoCliente = document.getElementById('clientContact').value;
+
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text("Cliente:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(nomeCliente, 30, yPos);
+            yPos += 7;
+            doc.setFont(undefined, 'bold');
+            doc.text("Contato:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(contatoCliente, 30, yPos);
+
+            doc.save(fileName);
+        };
     }
 
     function formatPhone(input) {
@@ -306,8 +817,9 @@
     }
 
     window.onload = () => {
+        // Assegura que o primeiro bloco de material tenha seus placeholders atualizados
         updateMaterialInfo(document.getElementById('material_0'));
-        // Exibe o botão de remover para os itens adicionados, mas mantém oculto para o primeiro
+        // Oculta o botão de remover do primeiro item (o item inicial não pode ser removido)
         const firstRemoveBtn = document.querySelector('#material-block-0 .remove-item-btn');
         if (firstRemoveBtn) {
             firstRemoveBtn.style.display = 'none'; 
