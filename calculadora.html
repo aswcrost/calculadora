@@ -54,39 +54,6 @@
       box-sizing: border-box;
     }
 
-    .material-item-block {
-      border: 1px solid #e0e0e0;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      background-color: #fcfcfc;
-      position: relative;
-    }
-
-    .material-item-block .remove-item-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 25px;
-      height: 25px;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      line-height: 1; /* Para centralizar o ícone */
-    }
-
-    .material-item-block .remove-item-btn:hover {
-      background-color: #c82333;
-    }
-
-    /* Estilo específico para agrupar Serviço Adicional */
     .service-group {
       display: flex;
       gap: 10px; /* Espaço entre os campos */
@@ -123,13 +90,6 @@
     button:hover {
       background-color: #0056b3;
     }
-    
-    .add-item-btn {
-        background-color: #28a745;
-    }
-    .add-item-btn:hover {
-        background-color: #218838;
-    }
 
     .result {
       margin-top: 20px;
@@ -138,6 +98,48 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+
+    /* Estilos para os novos blocos de material */
+    .material-item-group {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        position: relative;
+    }
+
+    .material-item-group .remove-item-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 0;
+    }
+
+    .material-item-group .remove-item-btn:hover {
+        background-color: #c82333;
+    }
+
+    /* Estilo para o botão de adicionar novo item */
+    #addMaterialItem {
+        background-color: #28a745;
+        margin-bottom: 20px;
+    }
+
+    #addMaterialItem:hover {
+        background-color: #218838;
+    }
   </style>
 </head>
 <body>
@@ -145,8 +147,9 @@
   <div class="container">
     <h1>Calculadora de corte CNC</h1>
 
-    <div id="material-items-container">
-      <div class="material-item-block" id="material-block-0">
+    <div class="material-item-group" id="materialItemGroupTemplate">
+        <button type="button" class="remove-item-btn" style="display: none;" onclick="removeMaterialItem(this)"><i class="fas fa-times"></i></button>
+
         <label for="material_0"><i class="fas fa-box"></i> Material:</label>
         <select id="material_0" onchange="updateMaterialInfo(this)">
           <option value="MDF_de_18mm">MDF de 18mm - 2750x1850mm (R$ 285,00)</option>
@@ -156,19 +159,32 @@
           <option value="ACM">ACM 3mm - 5000x1500mm (R$ 700,00)</option>
           <option value="PVC_Expandido_de_25mm">PVC Expandido de 25mm - 2000x1000mm (R$ 750,00)</option>
           <option value="Acrilico">Acrílico - 2000x1500mm (R$ 380,00)</option>
+          <option value="personalizado">Adicionar Material Personalizado</option>
         </select>
 
-        <label for="width_0"><i class="fas fa-ruler-horizontal"></i> Largura (mm):</label>
+        <div class="custom-material-fields" style="display: none;">
+            <label for="custom_material_name_0"><i class="fas fa-file-alt"></i> Nome do Material Personalizado:</label>
+            <input type="text" id="custom_material_name_0" placeholder="Ex: Compensado Naval 15mm">
+
+            <label for="custom_material_width_0"><i class="fas fa-ruler-horizontal"></i> Largura do Material Personalizado (mm):</label>
+            <input type="number" id="custom_material_width_0" placeholder="Insira a largura da chapa">
+
+            <label for="custom_material_height_0"><i class="fas fa-ruler-vertical"></i> Altura do Material Personalizado (mm):</label>
+            <input type="number" id="custom_material_height_0" placeholder="Insira a altura da chapa">
+
+            <label for="custom_material_price_0"><i class="fas fa-dollar-sign"></i> Preço da Chapa Personalizada (R$):</label>
+            <input type="number" id="custom_material_price_0" placeholder="Insira o preço da chapa">
+
+            </div>
+
+        <label for="width_0"><i class="fas fa-ruler-horizontal"></i> Largura da Peça (mm):</label>
         <input type="number" id="width_0" placeholder="Insira a largura">
 
-        <label for="height_0"><i class="fas fa-ruler-vertical"></i> Altura (mm):</label>
+        <label for="height_0"><i class="fas fa-ruler-vertical"></i> Altura da Peça (mm):</label>
         <input type="number" id="height_0" placeholder="Insira a altura">
-
-        <button type="button" class="remove-item-btn" onclick="removeMaterialItem(this)" style="display:none;">&times;</button>
-      </div>
     </div>
 
-    <button type="button" class="add-item-btn" onclick="addMaterialItem()">Adicionar novo item</button>
+    <button type="button" id="addMaterialItem" onclick="addMaterialItem()"><i class="fas fa-plus"></i> Adicionar novo item</button>
 
     <label for="cutPrice"><i class="fas fa-cut"></i> Valor do corte CNC por m² (R$):</label>
     <input type="number" id="cutPrice" placeholder="Insira o valor do corte" value="50">
@@ -181,7 +197,7 @@
 
     <label for="shippingCost"><i class="fas fa-truck"></i> Custo de Frete (R$):</label>
     <input type="number" id="shippingCost" placeholder="Opcional">
-    
+
     <label for="discountPercentage"><i class="fas fa-percent"></i> Desconto (%):</label>
     <input type="number" id="discountPercentage" placeholder="Opcional (ex: 10 para 10%)">
 
@@ -218,195 +234,254 @@
         Acrilico: { largura: 2000, altura: 1500, preco: 380.00, peso: 35.0 }
     };
 
-    // Adiciona a área da chapa a cada material para facilitar cálculos futuros
-    for (const key in materialData) {
-        if (materialData.hasOwnProperty(key)) {
-            materialData[key].areaChapa = (materialData[key].largura * materialData[key].altura) / 1000000;
-        }
-    }
-
     let calculationDataForPDF = [];
     let additionalInfoText = '';
-    let finalCalculatedTotal = 0; // Armazena o total final numérico
-    let itemCounter = 0; // Para gerar IDs únicos para os blocos de material
+    let finalCalculatedTotal = 0;
+    let itemCounter = 0; // Contador para IDs únicos
 
+    // Função para atualizar os placeholders de largura e altura
     function updateMaterialInfo(selectElement) {
-        const material = selectElement.value;
-        const materialInfo = materialData[material];
-        
-        // Encontra os inputs de largura e altura dentro do mesmo bloco
-        const block = selectElement.closest('.material-item-block');
-        const widthInput = block.querySelector('input[id^="width_"]');
-        const heightInput = block.querySelector('input[id^="height_"]');
+        const selectedMaterialValue = selectElement.value;
+        const parentGroup = selectElement.closest('.material-item-group');
+        const widthInput = parentGroup.querySelector('[id^="width_"]');
+        const heightInput = parentGroup.querySelector('[id^="height_"]');
+        const customMaterialFields = parentGroup.querySelector('.custom-material-fields');
 
-        if (widthInput && heightInput) {
-            widthInput.placeholder = `Largura máxima: ${materialInfo.largura} mm`;
-            heightInput.placeholder = `Altura máxima: ${materialInfo.altura} mm`;
+        if (selectedMaterialValue === 'personalizado') {
+            customMaterialFields.style.display = 'block';
+            widthInput.placeholder = "Insira a largura da peça";
+            heightInput.placeholder = "Insira a altura da peça";
+        } else {
+            customMaterialFields.style.display = 'none';
+            const materialInfo = materialData[selectedMaterialValue];
+            if (materialInfo) {
+                widthInput.placeholder = `Largura máxima: ${materialInfo.largura} mm`;
+                heightInput.placeholder = `Altura máxima: ${materialInfo.altura} mm`;
+            } else {
+                widthInput.placeholder = "Insira a largura";
+                heightInput.placeholder = "Insira a altura";
+            }
         }
     }
 
+    // Função para adicionar um novo item de material
     function addMaterialItem() {
-        itemCounter++; // Incrementa o contador para o novo ID
+        itemCounter++;
+        const template = document.getElementById('materialItemGroupTemplate');
+        const clone = template.cloneNode(true);
 
-        const container = document.getElementById('material-items-container');
-        const newItemBlock = document.createElement('div');
-        newItemBlock.className = 'material-item-block';
-        newItemBlock.id = `material-block-${itemCounter}`;
-        newItemBlock.innerHTML = `
-            <label for="material_${itemCounter}"><i class="fas fa-box"></i> Material:</label>
-            <select id="material_${itemCounter}" onchange="updateMaterialInfo(this)">
-                <option value="MDF_de_18mm">MDF de 18mm - 2750x1850mm (R$ 285,00)</option>
-                <option value="MDF_de_6mm">MDF de 6mm - 2750x1850mm (R$ 150,00)</option>
-                <option value="MDF_de_3mm">MDF de 3mm - 2750x1850mm (R$ 95,00)</option>
-                <option value="Madeira">Madeira - 2500x1500mm (R$ 320,00)</option>
-                <option value="ACM">ACM 3mm - 5000x1500mm (R$ 700,00)</option>
-                <option value="PVC_Expandido_de_25mm">PVC Expandido de 25mm - 2000x1000mm (R$ 750,00)</option>
-                <option value="Acrilico">Acrílico - 2000x1500mm (R$ 380,00)</option>
-            </select>
+        clone.id = `materialItemGroup_${itemCounter}`;
+        clone.querySelector('.remove-item-btn').style.display = 'flex'; // Mostra o botão de remover
 
-            <label for="width_${itemCounter}"><i class="fas fa-ruler-horizontal"></i> Largura (mm):</label>
-            <input type="number" id="width_${itemCounter}" placeholder="Insira a largura">
-
-            <label for="height_${itemCounter}"><i class="fas fa-ruler-vertical"></i> Altura (mm):</label>
-            <input type="number" id="height_${itemCounter}" placeholder="Insira a altura">
-
-            <button type="button" class="remove-item-btn" onclick="removeMaterialItem(this)">&times;</button>
-        `;
-        container.appendChild(newItemBlock);
-
-        // Atualiza o placeholder do novo item para o material padrão
-        const newSelect = document.getElementById(`material_${itemCounter}`);
-        updateMaterialInfo(newSelect);
-    }
-
-    function removeMaterialItem(buttonElement) {
-        const itemBlock = buttonElement.closest('.material-item-block');
-        itemBlock.remove();
-        // Não é necessário reajustar itemCounter, apenas para IDs únicos
-        // Re-calcular após a remoção
-        calculateMaterial(); 
-    }
-
-    function calculateMaterial() {
-        let totalOverallMaterialCost = 0;
-        let totalOverallCuttingCost = 0;
-        let totalOverallArea = 0;
-        let totalOverallWeight = 0;
-        
-        calculationDataForPDF = []; // Limpa dados anteriores do PDF
-
-        const materialBlocks = document.querySelectorAll('.material-item-block');
-
-        // Loop através de cada bloco de material adicionado
-        materialBlocks.forEach((block, index) => {
-            const materialId = `material_${index}`;
-            const widthId = `width_${index}`;
-            const heightId = `height_${index}`;
-
-            const material = block.querySelector(`#${materialId}`).value;
-            const materialInfo = materialData[material];
-            const inputLargura = parseFloat(block.querySelector(`#${widthId}`).value);
-            const inputAltura = parseFloat(block.querySelector(`#${heightId}`).value);
-
-            // Validação para o bloco atual
-            if (
-                !isNaN(inputLargura) && 
-                !isNaN(inputAltura) && 
-                inputLargura > 0 && 
-                inputAltura > 0 && 
-                inputLargura <= materialInfo.largura && 
-                inputAltura <= materialInfo.altura
-            ) {
-                const areaUsada = (inputLargura * inputAltura) / 1000000;
-                const precoPorM2 = materialInfo.preco / materialInfo.areaChapa;
-                const materialCostPerBlock = areaUsada * precoPorM2;
-                const cuttingCostPerBlock = areaUsada * parseFloat(document.getElementById('cutPrice').value);
-                const pesoCalculadoPerBlock = (areaUsada * (materialInfo.peso / materialInfo.areaChapa));
-
-                totalOverallMaterialCost += materialCostPerBlock;
-                totalOverallCuttingCost += cuttingCostPerBlock;
-                totalOverallArea += areaUsada;
-                totalOverallWeight += pesoCalculadoPerBlock;
-
-                // Adiciona os detalhes de cada item para possível exibição no PDF (se necessário)
-                calculationDataForPDF.push({
-                    label: `Item ${index + 1} (${material})`,
-                    area: areaUsada.toFixed(4),
-                    weight: pesoCalculadoPerBlock.toFixed(2),
-                    materialPrice: materialCostPerBlock.toFixed(2),
-                    cutPrice: cuttingCostPerBlock.toFixed(2)
-                });
-
-            } else {
-                // Se um bloco tem dimensões inválidas, exibe um alerta e para o cálculo
-                document.getElementById('result').innerHTML = `Erro no Item ${index + 1}: Insira dimensões válidas dentro dos limites do material selecionado.`;
-                document.getElementById('generatePDF').style.display = 'none';
-                return; // Sai da função se houver erro
+        // Atualiza IDs e for-attributes para serem únicos
+        clone.querySelectorAll('[id]').forEach(el => {
+            const originalId = el.id;
+            const newId = originalId.replace(/_\d+$/, `_${itemCounter}`);
+            el.id = newId;
+            // Se for um label, atualiza o 'for'
+            if (el.tagName === 'LABEL') {
+                el.htmlFor = newId;
             }
         });
 
-        // Se houverem blocos de material válidos para calcular
-        if (materialBlocks.length > 0) {
-            const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
-            const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
-            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
-            const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
+        // Limpa os valores dos campos clonados
+        clone.querySelectorAll('input').forEach(input => {
+            input.value = '';
+        });
+        clone.querySelector('select').value = 'MDF_de_18mm'; // Reseta para a opção padrão
 
-            const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
-            const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
+        // Esconde os campos de material personalizado no novo item
+        clone.querySelector('.custom-material-fields').style.display = 'none';
 
-            const nomeCliente = document.getElementById('clientName').value;
-            const contatoCliente = document.getElementById('clientContact').value;
+        // Insere o novo item antes do botão "Adicionar novo item"
+        document.getElementById('addMaterialItem').before(clone);
 
-            additionalInfoText = document.getElementById('additionalInfo').value.trim();
+        // Atualiza os placeholders do novo item
+        updateMaterialInfo(clone.querySelector('[id^="material_"]'));
+    }
 
-            let subtotalForDiscount = totalOverallMaterialCost + totalOverallCuttingCost + sandingCost + finishingCost + additionalServiceValue;
+    // Função para remover um item de material
+    function removeMaterialItem(buttonElement) {
+        const itemToRemove = buttonElement.closest('.material-item-group');
+        itemToRemove.remove();
+        // Não é necessário reajustar itemCounter, apenas remove o elemento
+    }
 
-            let discountAmount = 0;
-            if (discountPercentage > 0) {
-                discountAmount = subtotalForDiscount * (discountPercentage / 100);
+    function calculateMaterial() {
+        let totalPrecoMaterialGeral = 0;
+        let totalPrecoCorteGeral = 0;
+        let totalPesoGeral = 0;
+        let hasInvalidInput = false;
+
+        calculationDataForPDF = []; // Limpa os dados de cálculo anteriores para o PDF
+
+        const materialItemGroups = document.querySelectorAll('.material-item-group');
+
+        materialItemGroups.forEach((group, index) => {
+            const selectElement = group.querySelector('[id^="material_"]');
+            const selectedMaterialValue = selectElement.value;
+            let materialNameForDisplay; // Nome para exibir no resultado/PDF
+
+            let currentMaterialInfo;
+            let currentMaterialLargura;
+            let currentMaterialAltura;
+            let currentMaterialPreco;
+            let currentMaterialPeso = 0; // O peso será 0 para materiais personalizados se não tiver campo
+
+            const inputLarguraElement = group.querySelector('[id^="width_"]');
+            const inputAlturaElement = group.querySelector('[id^="height_"]');
+
+            const inputLargura = parseFloat(inputLarguraElement.value);
+            const inputAltura = parseFloat(inputAlturaElement.value);
+
+            if (selectedMaterialValue === 'personalizado') {
+                const customMaterialName = group.querySelector('[id^="custom_material_name_"]').value.trim();
+                const customMaterialWidth = parseFloat(group.querySelector('[id^="custom_material_width_"]').value);
+                const customMaterialHeight = parseFloat(group.querySelector('[id^="custom_material_height_"]').value);
+                const customMaterialPrice = parseFloat(group.querySelector('[id^="custom_material_price_"]').value);
+                // const customMaterialWeight = parseFloat(group.querySelector('[id^="custom_material_weight_"]').value) || 0;
+
+                if (!customMaterialName || isNaN(customMaterialWidth) || isNaN(customMaterialHeight) || isNaN(customMaterialPrice) || customMaterialWidth <= 0 || customMaterialHeight <= 0 || customMaterialPrice < 0) {
+                    hasInvalidInput = true;
+                    return; // Sai do forEach se houver erro no material personalizado
+                }
+
+                materialNameForDisplay = customMaterialName;
+                currentMaterialLargura = customMaterialWidth;
+                currentMaterialAltura = customMaterialHeight;
+                currentMaterialPreco = customMaterialPrice;
+                // currentMaterialPeso = customMaterialWeight; // Se houver campo para peso personalizado
+            } else {
+                currentMaterialInfo = materialData[selectedMaterialValue];
+                if (!currentMaterialInfo) { // Deveria ser inatingível com opções válidas
+                    hasInvalidInput = true;
+                    return;
+                }
+                materialNameForDisplay = selectElement.options[selectElement.selectedIndex].text.split(' - ')[0]; // Pega só o nome
+                currentMaterialLargura = currentMaterialInfo.largura;
+                currentMaterialAltura = currentMaterialInfo.altura;
+                currentMaterialPreco = currentMaterialInfo.preco;
+                currentMaterialPeso = currentMaterialInfo.peso;
             }
 
-            let subtotal = (subtotalForDiscount - discountAmount) + shippingCost;
-            finalCalculatedTotal = subtotal; // Armazena o valor numérico total
+            if (
+                !isNaN(inputLargura) &&
+                !isNaN(inputAltura) &&
+                inputLargura > 0 &&
+                inputAltura > 0 &&
+                inputLargura <= currentMaterialLargura &&
+                inputAltura <= currentMaterialAltura
+            ) {
+                const areaChapa = (currentMaterialLargura * currentMaterialAltura) / 1000000;
+                const areaUsada = (inputLargura * inputAltura) / 1000000;
+                const precoPorM2Material = currentMaterialPreco / areaChapa;
+                const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
 
-            let resultHtml = `<b>Resumo do Orçamento:</b><br><br>`;
-            resultHtml += `Área Total Utilizada: ${totalOverallArea.toFixed(4)} m²<br>`;
-            resultHtml += `Peso Estimado Total: ${totalOverallWeight.toFixed(2)} kg<br>`;
-            resultHtml += `Preço Total de Material: R$ ${totalOverallMaterialCost.toFixed(2)}<br>`;
-            resultHtml += `Preço Total de Corte: R$ ${totalOverallCuttingCost.toFixed(2)}<br>`;
+                const totalPrecoMaterialItem = areaUsada * precoPorM2Material;
+                const totalPrecoCorteItem = areaUsada * precoCortePorMetroQuadrado;
 
-            if (sandingCost > 0) {
-                resultHtml += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}<br>`;
-            }
-            if (finishingCost > 0) {
-                resultHtml += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}<br>`;
-            }
-            if (additionalServiceValue > 0 || additionalServiceName) {
-                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
-                resultHtml += `${serviceLabel}: R$ ${additionalServiceValue.toFixed(2)}<br>`;
-            }
-            if (discountPercentage > 0) {
-                resultHtml += `Desconto: ${discountPercentage.toFixed(2)}% (-R$ ${discountAmount.toFixed(2)})<br>`;
-            }
-            if (shippingCost > 0) {
-                resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}<br>`;
-            }
-            resultHtml += `<b>Preço Total Final: R$ ${finalCalculatedTotal.toFixed(2)}</b><br>`;
+                const pesoPorM2Material = currentMaterialPeso / areaChapa;
+                const pesoCalculadoItem = (areaUsada * pesoPorM2Material).toFixed(2);
 
-            if (additionalInfoText) {
-                resultHtml += `<br><br><b>Informações Adicionais:</b><br>${additionalInfoText.replace(/\n/g, "<br>")}`;
+                totalPrecoMaterialGeral += totalPrecoMaterialItem;
+                totalPrecoCorteGeral += totalPrecoCorteItem;
+                totalPesoGeral += parseFloat(pesoCalculadoItem);
+
+                // Adiciona detalhes deste item específico para o PDF
+                calculationDataForPDF.push({
+                    label: `Item ${index + 1}: ${materialNameForDisplay} (${inputLargura}x${inputAltura}mm)`,
+                    area: areaUsada.toFixed(4),
+                    peso: pesoCalculadoItem,
+                    materialCost: totalPrecoMaterialItem.toFixed(2),
+                    cutCost: totalPrecoCorteItem.toFixed(2),
+                });
+
+            } else {
+                hasInvalidInput = true;
+                return; // Sai do forEach se houver erro
             }
+        });
 
-            resultHtml += `<br><br><b>Cliente:</b> ${nomeCliente}<br><b>Contato:</b> ${contatoCliente}`;
-
-            document.getElementById('result').innerHTML = resultHtml;
-            document.getElementById('generatePDF').style.display = 'block';
-
-        } else {
-            document.getElementById('result').innerHTML = "Por favor, adicione pelo menos um item de material para calcular.";
+        if (hasInvalidInput) {
+            document.getElementById('result').innerHTML = "Por favor, insira dimensões e/ou informações de material válidas para todos os itens, dentro dos limites do material.";
             document.getElementById('generatePDF').style.display = 'none';
+            return; // Interrompe a função se houver erro
         }
+
+        const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
+        const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
+        const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+        const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
+
+        const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
+        const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
+
+        const nomeCliente = document.getElementById('clientName').value;
+        const contatoCliente = document.getElementById('clientContact').value;
+
+        additionalInfoText = document.getElementById('additionalInfo').value.trim();
+
+        // Subtotal para cálculo do desconto (exclui o frete)
+        let subtotalForDiscount = totalPrecoMaterialGeral + totalPrecoCorteGeral + sandingCost + finishingCost + additionalServiceValue;
+
+        let discountAmount = 0;
+        if (discountPercentage > 0) {
+            discountAmount = subtotalForDiscount * (discountPercentage / 100);
+        }
+
+        // Preço total final (aplica o desconto e depois adiciona o frete)
+        let subtotal = (subtotalForDiscount - discountAmount) + shippingCost;
+        finalCalculatedTotal = subtotal; // Armazena o valor numérico
+
+        const totalPrecoDisplay = subtotal.toFixed(2); // Valor formatado para exibição
+
+        // Início da montagem do HTML de resultado
+        let resultHtml = "";
+
+        // Adiciona um resumo para cada item no HTML de exibição
+        calculationDataForPDF.forEach(item => {
+            resultHtml += `<h3>${item.label}</h3>`;
+            resultHtml += `Área Utilizada: ${item.area} m²<br>`;
+            resultHtml += `Peso Estimado: ${item.peso} kg<br>`;
+            resultHtml += `Custo do Material: R$ ${item.materialCost}<br>`;
+            resultHtml += `Custo do Corte: R$ ${item.cutCost}<br><br>`;
+        });
+
+        resultHtml += `<b>Total Material: R$ ${totalPrecoMaterialGeral.toFixed(2)}</b><br>`;
+        resultHtml += `<b>Total Corte: R$ ${totalPrecoCorteGeral.toFixed(2)}</b><br>`;
+        resultHtml += `<b>Peso Total Estimado: ${totalPesoGeral.toFixed(2)} kg</b><br><br>`;
+
+
+        if (sandingCost > 0) {
+            resultHtml += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}<br>`;
+        }
+        if (finishingCost > 0) {
+            resultHtml += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}<br>`;
+        }
+        if (additionalServiceValue > 0 || additionalServiceName) {
+            const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
+            resultHtml += `${serviceLabel}: R$ ${additionalServiceValue.toFixed(2)}<br>`;
+        }
+
+        if (discountPercentage > 0) {
+            resultHtml += `Desconto: ${discountPercentage.toFixed(2)}% (-R$ ${discountAmount.toFixed(2)})<br>`;
+        }
+
+        if (shippingCost > 0) {
+            resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}<br>`;
+        }
+
+        resultHtml += `<b>Preço Total Final: R$ ${totalPrecoDisplay}</b><br>`;
+
+        if (additionalInfoText) {
+            resultHtml += `<br><br><b>Informações Adicionais:</b><br>${additionalInfoText.replace(/\n/g, "<br>")}`;
+        }
+
+        resultHtml += `<br><br><b>Cliente:</b> ${nomeCliente}<br><b>Contato:</b> ${contatoCliente}`;
+
+
+        document.getElementById('result').innerHTML = resultHtml;
+        document.getElementById('generatePDF').style.display = 'block';
     }
 
     async function generatePDF() {
@@ -424,7 +499,7 @@
         const diaExpiracao = String(dataExpiracao.getDate()).padStart(2, '0');
         const mesExpiracao = String(dataExpiracao.getMonth() + 1).padStart(2, '0');
         const anoExpiracao = dataExpiracao.getFullYear();
-        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoOrcamento}`;
+        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoExpiracao}`; // Corrigido para usar anoExpiracao
 
         let clientName = document.getElementById('clientName').value.trim();
         let fileName = "orcamento_corte_CNC.pdf";
@@ -435,12 +510,9 @@
         }
 
         const logoImg = new Image();
-        logoImg.src = 'logo-calculadora1.png'; // Verifique se este nome está correto no seu GitHub!
+        logoImg.src = 'logo-calculadora1.png';
 
-        logoImg.onload = () => {
-            doc.addImage(logoImg, 'PNG', 10, 10, 50, 20);
-
-            // Informações da Empresa (ao lado do logo)
+        const addContentToPdf = () => {
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
             const empresaInfoX = 70;
@@ -451,7 +523,6 @@
             doc.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
             empresaInfoY += 5;
             doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
-
 
             let yPos = 40;
 
@@ -465,85 +536,65 @@
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
             yPos += 10;
 
-            // --- Início da Tabela de Detalhes ---
+            // --- Início da Tabela de Detalhes (multi-item) ---
             doc.setFontSize(11);
             const col1X = 15;
             const col2X = 185;
+            let totalPrecoMaterialGeral = 0;
+            let totalPrecoCorteGeral = 0;
+            let totalPesoGeral = 0;
 
-            // Variáveis para somar os totais para o PDF
-            let totalPdfMaterialPrice = 0;
-            let totalPdfCutPrice = 0;
-            let totalPdfArea = 0;
-            let totalPdfWeight = 0;
+            // Título dos itens
+            doc.setFont(undefined, 'bold');
+            doc.text("Detalhes dos Itens:", col1X, yPos);
+            yPos += 7;
 
-            // Adiciona cada item individualmente no PDF, se `calculationDataForPDF` for populado assim
-            // Se a intenção é só exibir o total, essa parte pode ser removida e só usar os totais agregados
-            // O usuário pediu "apenas somar as coisas", então vamos somar para o display final
-            
-            // Recalcula os totais aqui para garantir que estão atualizados
-            const materialBlocks = document.querySelectorAll('.material-item-block');
-            materialBlocks.forEach((block, index) => {
-                const materialId = `material_${index}`;
-                const widthId = `width_${index}`;
-                const heightId = `height_${index}`;
-
-                const material = block.querySelector(`#${materialId}`).value;
-                const materialInfo = materialData[material];
-                const inputLargura = parseFloat(block.querySelector(`#${widthId}`).value);
-                const inputAltura = parseFloat(block.querySelector(`#${heightId}`).value);
-
-                if (!isNaN(inputLargura) && !isNaN(inputAltura) && inputLargura > 0 && inputAltura > 0 && inputLargura <= materialInfo.largura && inputAltura <= materialInfo.altura) {
-                    const areaUsada = (inputLargura * inputAltura) / 1000000;
-                    const precoPorM2 = materialInfo.preco / materialInfo.areaChapa;
-                    const materialCostPerBlock = areaUsada * precoPorM2;
-                    const cuttingCostPerBlock = areaUsada * parseFloat(document.getElementById('cutPrice').value);
-                    const pesoCalculadoPerBlock = (areaUsada * (materialInfo.peso / materialInfo.areaChapa));
-
-                    totalPdfMaterialPrice += materialCostPerBlock;
-                    totalPdfCutPrice += cuttingCostPerBlock;
-                    totalPdfArea += areaUsada;
-                    totalPdfWeight += pesoCalculadoPerBlock;
-
-                    // Exibir detalhes de cada item no PDF (opcional, mas útil para ver a composição)
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`Item ${index + 1} (${material}):`, col1X, yPos);
-                    yPos += 7;
-                    doc.setFont(undefined, 'normal');
-                    doc.text(`  Área Utilizada: ${areaUsada.toFixed(4)} m²`, col1X + 5, yPos);
-                    doc.text(`  Peso Estimado: ${pesoCalculadoPerBlock.toFixed(2)} kg`, col2X, yPos, { align: "right" });
-                    yPos += 7;
-                    doc.text(`  Preço Material: R$ ${materialCostPerBlock.toFixed(2)}`, col1X + 5, yPos);
-                    doc.text(`  Preço Corte: R$ ${cuttingCostPerBlock.toFixed(2)}`, col2X, yPos, { align: "right" });
-                    yPos += 10; // Espaço extra entre os itens
+            calculationDataForPDF.forEach((item, idx) => {
+                doc.setFont(undefined, 'bold');
+                doc.text(item.label, col1X, yPos);
+                yPos += 7;
+                doc.setFont(undefined, 'normal');
+                doc.text(`- Área Utilizada: ${item.area} m²`, col1X + 5, yPos);
+                yPos += 7;
+                doc.text(`- Peso Estimado: ${item.peso} kg`, col1X + 5, yPos);
+                yPos += 7;
+                doc.text(`- Custo do Material: R$ ${item.materialCost}`, col1X + 5, yPos);
+                yPos += 7;
+                doc.text(`- Custo do Corte: R$ ${item.cutCost}`, col1X + 5, yPos);
+                yPos += 7;
+                if (idx < calculationDataForPDF.length - 1) { // Linha divisória entre itens
+                    doc.line(col1X, yPos - 3, col2X, yPos - 3);
+                    yPos += 5;
                 }
+                totalPrecoMaterialGeral += parseFloat(item.materialCost);
+                totalPrecoCorteGeral += parseFloat(item.cutCost);
+                totalPesoGeral += parseFloat(item.peso);
             });
 
-
-            // Adiciona os totais agregados
+            // Resumo dos totais de material e corte
+            yPos += 5;
             doc.setFont(undefined, 'bold');
-            doc.text("Resumo Geral:", col1X, yPos);
+            doc.text("Total Material:", col1X, yPos);
+            doc.text(`R$ ${totalPrecoMaterialGeral.toFixed(2)}`, col2X, yPos, { align: "right" });
             yPos += 7;
-            doc.setFont(undefined, 'normal');
-            doc.text(`Área Total Utilizada: ${totalPdfArea.toFixed(4)} m²`, col1X, yPos);
+            doc.text("Total Corte:", col1X, yPos);
+            doc.text(`R$ ${totalPrecoCorteGeral.toFixed(2)}`, col2X, yPos, { align: "right" });
             yPos += 7;
-            doc.text(`Peso Estimado Total: ${totalPdfWeight.toFixed(2)} kg`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Preço Total de Material: R$ ${totalPdfMaterialPrice.toFixed(2)}`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Preço Total de Corte: R$ ${totalPdfCutPrice.toFixed(2)}`, col1X, yPos);
+            doc.text("Peso Total Estimado:", col1X, yPos);
+            doc.text(`${totalPesoGeral.toFixed(2)} kg`, col2X, yPos, { align: "right" });
             yPos += 7;
 
-            // Linha divisória antes dos custos adicionais
-            doc.line(col1X, yPos - 3, col2X, yPos - 3);
+            doc.line(col1X, yPos - 3, col2X, yPos - 3); // Linha após totais de itens
             yPos += 2;
 
-
+            // Outros custos e totais
             const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
             const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
             const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
             const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
             const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
             const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
+
 
             if (sandingCost > 0) {
                 doc.setFont(undefined, 'normal');
@@ -558,25 +609,25 @@
                 yPos += 7;
             }
             if (additionalServiceValue > 0 || additionalServiceName) {
-                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
                 doc.setFont(undefined, 'normal');
+                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
                 doc.text(`${serviceLabel}:`, col1X, yPos);
                 doc.text(`R$ ${additionalServiceValue.toFixed(2)}`, col2X, yPos, { align: "right" });
                 yPos += 7;
             }
-            // Cálculo do desconto para o PDF (precisa ser feito aqui novamente para garantir consistência)
-            let subtotalForDiscountPdf = totalPdfMaterialPrice + totalPdfCutPrice + sandingCost + finishingCost + additionalServiceValue;
-            let discountAmountPdf = 0;
-            if (discountPercentage > 0) {
-                discountAmountPdf = subtotalForDiscountPdf * (discountPercentage / 100);
-            }
 
             if (discountPercentage > 0) {
+                // Recalcula o desconto para exibir corretamente no PDF
+                let subtotalForDiscount = totalPrecoMaterialGeral + totalPrecoCorteGeral + sandingCost + finishingCost + additionalServiceValue;
+                let discountAmount = subtotalForDiscount * (discountPercentage / 100);
+
                 doc.setFont(undefined, 'normal');
                 doc.text("Desconto:", col1X, yPos);
-                doc.text(`${discountPercentage.toFixed(2)}% (-R$ ${discountAmountPdf.toFixed(2)})`, col2X, yPos, { align: "right" });
+                doc.text(`${discountPercentage.toFixed(2)}% (-R$ ${discountAmount.toFixed(2)})`, col2X, yPos, { align: "right" });
                 yPos += 7;
             }
+
+            // Adiciona o Custo de Frete (se houver)
             if (shippingCost > 0) {
                 doc.setFont(undefined, 'normal');
                 doc.text("Custo de Frete:", col1X, yPos);
@@ -584,12 +635,11 @@
                 yPos += 7;
             }
 
-            // Adiciona o Preço Total FINAL usando a variável global que já está atualizada
+            // Adiciona o Preço Total usando a variável global
             doc.setFont(undefined, 'bold');
-            doc.text("Preço Total Final:", col1X, yPos);
+            doc.text("PREÇO TOTAL FINAL:", col1X, yPos);
             doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
             yPos += 7;
-
 
             // --- Fim da Tabela de Detalhes ---
 
@@ -627,183 +677,14 @@
             doc.save(fileName);
         };
 
-        // Fallback para quando a imagem não carrega (caso o logo não seja encontrado)
+        logoImg.onload = () => {
+            doc.addImage(logoImg, 'PNG', 10, 10, 50, 20);
+            addContentToPdf();
+        };
+
         logoImg.onerror = () => {
-            let yPos = 10;
-
-            // Informações da Empresa (ao lado do logo - fallback)
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            const empresaInfoX = 70;
-            let empresaInfoY = 15;
-
-            doc.text("Site: www.vetorcut.com.br", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5;
-            doc.text("Atendente: Jefferson Machado", empresaInfoX, empresaInfoY);
-            empresaInfoY += 5;
-            doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
-
-            // Se o logo não carregou, o título do orçamento começa mais cedo
-            yPos = 40;
-            doc.setFontSize(16);
-            doc.text("Orçamento de Corte CNC", 10, yPos);
-            yPos += 10;
-
-            doc.setFontSize(12);
-            doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
-            yPos += 7;
-            doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
-            yPos += 10;
-
-            // --- Início da Tabela de Detalhes (Fallback) ---
-            doc.setFontSize(11);
-            const col1X = 15;
-            const col2X = 185;
-
-            // Variáveis para somar os totais para o PDF (fallback)
-            let totalPdfMaterialPrice = 0;
-            let totalPdfCutPrice = 0;
-            let totalPdfArea = 0;
-            let totalPdfWeight = 0;
-            
-            // Recalcula os totais aqui para garantir que estão atualizados (fallback)
-            const materialBlocks = document.querySelectorAll('.material-item-block');
-            materialBlocks.forEach((block, index) => {
-                const materialId = `material_${index}`;
-                const widthId = `width_${index}`;
-                const heightId = `height_${index}`;
-
-                const material = block.querySelector(`#${materialId}`).value;
-                const materialInfo = materialData[material];
-                const inputLargura = parseFloat(block.querySelector(`#${widthId}`).value);
-                const inputAltura = parseFloat(block.querySelector(`#${heightId}`).value);
-
-                if (!isNaN(inputLargura) && !isNaN(inputAltura) && inputLargura > 0 && inputAltura > 0 && inputLargura <= materialInfo.largura && inputAltura <= materialInfo.altura) {
-                    const areaUsada = (inputLargura * inputAltura) / 1000000;
-                    const precoPorM2 = materialInfo.preco / materialInfo.areaChapa;
-                    const materialCostPerBlock = areaUsada * precoPorM2;
-                    const cuttingCostPerBlock = areaUsada * parseFloat(document.getElementById('cutPrice').value);
-                    const pesoCalculadoPerBlock = (areaUsada * (materialInfo.peso / materialInfo.areaChapa));
-
-                    totalPdfMaterialPrice += materialCostPerBlock;
-                    totalPdfCutPrice += cuttingCostPerBlock;
-                    totalPdfArea += areaUsada;
-                    totalPdfWeight += pesoCalculadoPerBlock;
-
-                    // Exibir detalhes de cada item no PDF (opcional, mas útil para ver a composição)
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`Item ${index + 1} (${material}):`, col1X, yPos);
-                    yPos += 7;
-                    doc.setFont(undefined, 'normal');
-                    doc.text(`  Área Utilizada: ${areaUsada.toFixed(4)} m²`, col1X + 5, yPos);
-                    doc.text(`  Peso Estimado: ${pesoCalculadoPerBlock.toFixed(2)} kg`, col2X, yPos, { align: "right" });
-                    yPos += 7;
-                    doc.text(`  Preço Material: R$ ${materialCostPerBlock.toFixed(2)}`, col1X + 5, yPos);
-                    doc.text(`  Preço Corte: R$ ${cuttingCostPerBlock.toFixed(2)}`, col2X, yPos, { align: "right" });
-                    yPos += 10; // Espaço extra entre os itens
-                }
-            });
-
-            // Adiciona os totais agregados (fallback)
-            doc.setFont(undefined, 'bold');
-            doc.text("Resumo Geral:", col1X, yPos);
-            yPos += 7;
-            doc.setFont(undefined, 'normal');
-            doc.text(`Área Total Utilizada: ${totalPdfArea.toFixed(4)} m²`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Peso Estimado Total: ${totalPdfWeight.toFixed(2)} kg`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Preço Total de Material: R$ ${totalPdfMaterialPrice.toFixed(2)}`, col1X, yPos);
-            yPos += 7;
-            doc.text(`Preço Total de Corte: R$ ${totalPdfCutPrice.toFixed(2)}`, col1X, yPos);
-            yPos += 7;
-
-            // Linha divisória antes dos custos adicionais (fallback)
-            doc.line(col1X, yPos - 3, col2X, yPos - 3);
-            yPos += 2;
-
-            const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
-            const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
-            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
-            const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
-            const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
-            const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
-
-            if (sandingCost > 0) {
-                doc.setFont(undefined, 'normal');
-                doc.text("Custo de Lixamento:", col1X, yPos);
-                doc.text(`R$ ${sandingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
-                yPos += 7;
-            }
-            if (finishingCost > 0) {
-                doc.setFont(undefined, 'normal');
-                doc.text("Custo de Acabamento:", col1X, yPos);
-                doc.text(`R$ ${finishingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
-                yPos += 7;
-            }
-            if (additionalServiceValue > 0 || additionalServiceName) {
-                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
-                doc.setFont(undefined, 'normal');
-                doc.text(`${serviceLabel}:`, col1X, yPos);
-                doc.text(`R$ ${additionalServiceValue.toFixed(2)}`, col2X, yPos, { align: "right" });
-                yPos += 7;
-            }
-            // Cálculo do desconto para o PDF (fallback)
-            let subtotalForDiscountPdf = totalPdfMaterialPrice + totalPdfCutPrice + sandingCost + finishingCost + additionalServiceValue;
-            let discountAmountPdf = 0;
-            if (discountPercentage > 0) {
-                discountAmountPdf = subtotalForDiscountPdf * (discountPercentage / 100);
-            }
-
-            if (discountPercentage > 0) {
-                doc.setFont(undefined, 'normal');
-                doc.text("Desconto:", col1X, yPos);
-                doc.text(`${discountPercentage.toFixed(2)}% (-R$ ${discountAmountPdf.toFixed(2)})`, col2X, yPos, { align: "right" });
-                yPos += 7;
-            }
-            if (shippingCost > 0) {
-                doc.setFont(undefined, 'normal');
-                doc.text("Custo de Frete:", col1X, yPos);
-                doc.text(`R$ ${shippingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
-                yPos += 7;
-            }
-
-            // Adiciona o Preço Total FINAL usando a variável global que já está atualizada (fallback)
-            doc.setFont(undefined, 'bold');
-            doc.text("Preço Total Final:", col1X, yPos);
-            doc.text(`R$ ${finalCalculatedTotal.toFixed(2)}`, col2X, yPos, { align: "right" });
-            yPos += 7;
-
-            if (additionalInfoText) {
-                yPos += 10;
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text("Informações Adicionais:", 10, yPos);
-                doc.setFont(undefined, 'normal');
-                yPos += 7;
-                const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180);
-                additionalInfoLines.forEach(line => {
-                    doc.text(line, 10, yPos);
-                    yPos += 7;
-                });
-            }
-
-            const nomeCliente = document.getElementById('clientName').value;
-            const contatoCliente = document.getElementById('clientContact').value;
-
-            yPos += 10;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text("Cliente:", 10, yPos);
-            doc.setFont(undefined, 'normal');
-            doc.text(nomeCliente, 30, yPos);
-            yPos += 7;
-            doc.setFont(undefined, 'bold');
-            doc.text("Contato:", 10, yPos);
-            doc.setFont(undefined, 'normal');
-            doc.text(contatoCliente, 30, yPos);
-
-            doc.save(fileName);
+            console.warn("Não foi possível carregar o logo. Gerando PDF sem o logo.");
+            addContentToPdf(); // Gera o PDF mesmo que o logo não carregue
         };
     }
 
@@ -816,15 +697,11 @@
         }
     }
 
+    // Inicializa o primeiro item ao carregar a página
     window.onload = () => {
-        // Assegura que o primeiro bloco de material tenha seus placeholders atualizados
         updateMaterialInfo(document.getElementById('material_0'));
-        // Oculta o botão de remover do primeiro item (o item inicial não pode ser removido)
-        const firstRemoveBtn = document.querySelector('#material-block-0 .remove-item-btn');
-        if (firstRemoveBtn) {
-            firstRemoveBtn.style.display = 'none'; 
-        }
     };
+
 </script>
 
 </body>
