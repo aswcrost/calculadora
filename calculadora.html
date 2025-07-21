@@ -190,6 +190,21 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
+        // 1. Obter e formatar a data atual do orçamento
+        const dataOrcamento = new Date();
+        const diaOrcamento = String(dataOrcamento.getDate()).padStart(2, '0');
+        const mesOrcamento = String(dataOrcamento.getMonth() + 1).padStart(2, '0'); // Mês é 0-indexed
+        const anoOrcamento = dataOrcamento.getFullYear();
+        const dataFormatadaOrcamento = `${diaOrcamento}/${mesOrcamento}/${anoOrcamento}`;
+
+        // 2. Calcular a data de expiração (15 dias depois)
+        const dataExpiracao = new Date();
+        dataExpiracao.setDate(dataOrcamento.getDate() + 15);
+        const diaExpiracao = String(dataExpiracao.getDate()).padStart(2, '0');
+        const mesExpiracao = String(dataExpiracao.getMonth() + 1).padStart(2, '0');
+        const anoExpiracao = dataExpiracao.getFullYear();
+        const dataFormatadaExpiracao = `${diaExpiracao}/${mesExpiracao}/${anoExpiracao}`;
+
         let clientName = document.getElementById('clientName').value.trim();
         let fileName = "orcamento_corte_CNC.pdf"; 
 
@@ -199,7 +214,6 @@
         }
 
         const logoImg = new Image();
-        // AQUI: Corrigido o nome do arquivo da imagem para 'logo-calculadora1.png'
         logoImg.src = 'logo-calculadora1.png'; 
 
         logoImg.onload = () => {
@@ -212,6 +226,12 @@
             yPos += 10; 
 
             doc.setFontSize(12);
+            // Adicionar as datas ao PDF
+            doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
+            yPos += 7;
+            doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
+            yPos += 10; // Espaço extra antes dos detalhes do cálculo
+
             const lines = currentCalculation.split('\n');
             lines.forEach(line => {
                 doc.text(line, 10, yPos);
@@ -222,13 +242,18 @@
         };
 
         logoImg.onerror = () => {
-            // Fallback se a imagem não carregar, ainda salva o PDF com o conteúdo
             let yPos = 10;
             doc.setFontSize(16);
             doc.text("Orçamento de Corte CNC", 10, yPos);
             yPos += 10;
 
             doc.setFontSize(12);
+            // Adicionar as datas ao PDF mesmo sem a imagem
+            doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
+            yPos += 7;
+            doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
+            yPos += 10;
+
             const lines = currentCalculation.split('\n');
             lines.forEach(line => {
                 doc.text(line, 10, yPos);
