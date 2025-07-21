@@ -144,7 +144,7 @@
         Acrilico: { largura: 2000, altura: 1500, preco: 380.00, peso: 35.0 }
     };
 
-    let currentCalculation = '';
+    let currentCalculationDetails = ''; // Renomeado para não confundir com a string final
     let customTitleText = ''; // Variável para armazenar o título personalizado
     let additionalInfoText = ''; // Variável para armazenar as informações adicionais
 
@@ -208,8 +208,8 @@
             const pesoPorM2 = materialInfo.peso / areaChapa;
             const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2);
 
-            // Montar a string currentCalculation
-            currentCalculation =
+            // Montar a string currentCalculationDetails (apenas os detalhes do cálculo)
+            currentCalculationDetails =
                 `Material: ${material}\n` +
                 `Área Utilizada: ${areaUsada.toFixed(4)} m²\n` +
                 `Peso Estimado: ${pesoCalculado} kg\n` +
@@ -217,29 +217,31 @@
                 `Preço do Corte: R$ ${totalPrecoCorte.toFixed(2)}\n`;
             
             if (sandingCost > 0) {
-                currentCalculation += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}\n`;
+                currentCalculationDetails += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}\n`;
             }
             if (finishingCost > 0) {
-                currentCalculation += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}\n`;
+                currentCalculationDetails += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}\n`;
             }
             if (shippingCost > 0) {
-                currentCalculation += `Custo de Frete: R$ ${shippingCost.toFixed(2)}\n`;
+                currentCalculationDetails += `Custo de Frete: R$ ${shippingCost.toFixed(2)}\n`;
             }
             if (discountPercentage > 0) {
-                currentCalculation += `Desconto: ${discountPercentage.toFixed(2)}%\n`;
+                currentCalculationDetails += `Desconto: ${discountPercentage.toFixed(2)}%\n`;
             }
             
-            currentCalculation += `Preço Total: R$ ${totalPreco}\n\n`;
+            currentCalculationDetails += `Preço Total: R$ ${totalPreco}`;
 
-            // Adiciona as informações adicionais se existirem
+            // A string que vai para o HTML (resultado na tela)
+            let resultHtml = currentCalculationDetails.replace(/\n/g, "<br>");
+            
             if (additionalInfoText) {
-                currentCalculation += `Informações Adicionais:\n${additionalInfoText}\n\n`;
+                resultHtml += `<br><br><b>Informações Adicionais:</b><br>${additionalInfoText.replace(/\n/g, "<br>")}`;
             }
 
-            currentCalculation += `Cliente: ${nomeCliente}\n` +
-                                  `Contato: ${contatoCliente}`;
+            resultHtml += `<br><br><b>Cliente:</b> ${nomeCliente}<br><b>Contato:</b> ${contatoCliente}`;
 
-            document.getElementById('result').innerHTML = currentCalculation.replace(/\n/g, "<br>");
+
+            document.getElementById('result').innerHTML = resultHtml;
             document.getElementById('generatePDF').style.display = 'block';
         } else {
             document.getElementById('result').innerHTML = "Por favor, insira dimensões válidas dentro dos limites do material.";
@@ -273,7 +275,7 @@
         }
 
         const logoImg = new Image();
-        logoImg.src = 'logo-calculadora1.png'; 
+        logoImg.src = 'logo-calculadora1.png'; // Verifique se este nome está correto no seu GitHub!
 
         logoImg.onload = () => {
             doc.addImage(logoImg, 'PNG', 10, 10, 50, 20); 
@@ -297,13 +299,36 @@
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
             yPos += 10; 
 
-            const lines = currentCalculation.split('\n');
-            lines.forEach(line => {
-                // Para lidar com o texto longo do campo de informações adicionais
-                const splitText = doc.splitTextToSize(line, 180); // 180mm de largura para o texto
-                doc.text(splitText, 10, yPos);
-                yPos += (splitText.length * 7); // Incrementa Y baseado no número de linhas geradas pelo splitTextToSize
+            // Adiciona os detalhes do cálculo
+            const calculationLines = currentCalculationDetails.split('\n');
+            calculationLines.forEach(line => {
+                doc.text(line, 10, yPos);
+                yPos += 7; 
             });
+
+            // Adiciona as informações adicionais, se existirem
+            if (additionalInfoText) {
+                yPos += 10; // Espaço antes das informações adicionais
+                doc.setFontSize(12);
+                doc.text("Informações Adicionais:", 10, yPos);
+                yPos += 7;
+                // Usa splitTextToSize para quebrar o texto longo em várias linhas
+                const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180); // 180mm de largura
+                additionalInfoLines.forEach(line => {
+                    doc.text(line, 10, yPos);
+                    yPos += 7;
+                });
+            }
+
+            // Adiciona informações do cliente
+            const nomeCliente = document.getElementById('clientName').value;
+            const contatoCliente = document.getElementById('clientContact').value;
+            
+            yPos += 10; // Espaço antes das informações do cliente
+            doc.setFontSize(12);
+            doc.text(`Cliente: ${nomeCliente}`, 10, yPos);
+            yPos += 7;
+            doc.text(`Contato: ${contatoCliente}`, 10, yPos);
 
             doc.save(fileName); 
         };
@@ -327,12 +352,36 @@
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
             yPos += 10;
 
-            const lines = currentCalculation.split('\n');
-            lines.forEach(line => {
-                const splitText = doc.splitTextToSize(line, 180);
-                doc.text(splitText, 10, yPos);
-                yPos += (splitText.length * 7);
+            // Adiciona os detalhes do cálculo
+            const calculationLines = currentCalculationDetails.split('\n');
+            calculationLines.forEach(line => {
+                doc.text(line, 10, yPos);
+                yPos += 7; 
             });
+
+            // Adiciona as informações adicionais, se existirem (fallback)
+            if (additionalInfoText) {
+                yPos += 10;
+                doc.setFontSize(12);
+                doc.text("Informações Adicionais:", 10, yPos);
+                yPos += 7;
+                const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180);
+                additionalInfoLines.forEach(line => {
+                    doc.text(line, 10, yPos);
+                    yPos += 7;
+                });
+            }
+
+            // Adiciona informações do cliente (fallback)
+            const nomeCliente = document.getElementById('clientName').value;
+            const contatoCliente = document.getElementById('clientContact').value;
+            
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.text(`Cliente: ${nomeCliente}`, 10, yPos);
+            yPos += 7;
+            doc.text(`Contato: ${contatoCliente}`, 10, yPos);
+
             doc.save(fileName); 
         };
     }
