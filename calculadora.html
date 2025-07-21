@@ -144,6 +144,7 @@
         <input type="text" id="additionalServiceName" placeholder="Descrição do serviço (opcional)">
         <input type="number" id="additionalServiceValue" class="service-value" placeholder="Valor (R$)" value="0">
     </div>
+
     <label for="additionalInfo"><i class="fas fa-info-circle"></i> Informações Adicionais:</label>
     <textarea id="additionalInfo" placeholder="Qualquer informação extra que queira adicionar (opcional)" rows="4"></textarea>
 
@@ -171,7 +172,7 @@
         Acrilico: { largura: 2000, altura: 1500, preco: 380.00, peso: 35.0 }
     };
 
-    let currentCalculationDetails = ''; 
+    let calculationDataForPDF = []; // Nova variável para dados tabulados no PDF
     let additionalInfoText = ''; 
 
     function updateMaterialInfo() {
@@ -198,7 +199,6 @@
         const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
         const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
 
-        // Novos campos de serviço adicional
         const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
         const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
 
@@ -226,7 +226,7 @@
             subtotal += sandingCost;
             subtotal += finishingCost;
             subtotal += shippingCost;
-            subtotal += additionalServiceValue; // Adiciona o valor do serviço adicional
+            subtotal += additionalServiceValue; 
 
             if (discountPercentage > 0) {
                 subtotal = subtotal * (1 - discountPercentage / 100);
@@ -237,36 +237,38 @@
             const pesoPorM2 = materialInfo.peso / areaChapa;
             const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2);
 
-            // Montar a string currentCalculationDetails
-            currentCalculationDetails =
-                `Material: ${material}\n` +
-                `Área Utilizada: ${areaUsada.toFixed(4)} m²\n` +
-                `Peso Estimado: ${pesoCalculado} kg\n` +
-                `Preço do Material: R$ ${totalPrecoMaterial.toFixed(2)}\n` +
-                `Preço do Corte: R$ ${totalPrecoCorte.toFixed(2)}\n`;
+            // Preenche calculationDataForPDF com objetos { label, value }
+            calculationDataForPDF = [];
+            calculationDataForPDF.push({ label: "Material", value: material });
+            calculationDataForPDF.push({ label: "Área Utilizada", value: `${areaUsada.toFixed(4)} m²` });
+            calculationDataForPDF.push({ label: "Peso Estimado", value: `${pesoCalculado} kg` });
+            calculationDataForPDF.push({ label: "Preço do Material", value: `R$ ${totalPrecoMaterial.toFixed(2)}` });
+            calculationDataForPDF.push({ label: "Preço do Corte", value: `R$ ${totalPrecoCorte.toFixed(2)}` });
             
             if (sandingCost > 0) {
-                currentCalculationDetails += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}\n`;
+                calculationDataForPDF.push({ label: "Custo de Lixamento", value: `R$ ${sandingCost.toFixed(2)}` });
             }
             if (finishingCost > 0) {
-                currentCalculationDetails += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}\n`;
+                calculationDataForPDF.push({ label: "Custo de Acabamento", value: `R$ ${finishingCost.toFixed(2)}` });
             }
             if (shippingCost > 0) {
-                currentCalculationDetails += `Custo de Frete: R$ ${shippingCost.toFixed(2)}\n`;
+                calculationDataForPDF.push({ label: "Custo de Frete", value: `R$ ${shippingCost.toFixed(2)}` });
             }
-            // Adiciona o serviço adicional se houver valor ou nome
             if (additionalServiceValue > 0 || additionalServiceName) {
-                const serviceNamePart = additionalServiceName ? `${additionalServiceName}: ` : '';
-                currentCalculationDetails += `Serviço Adicional: ${serviceNamePart}R$ ${additionalServiceValue.toFixed(2)}\n`;
+                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
+                calculationDataForPDF.push({ label: serviceLabel, value: `R$ ${additionalServiceValue.toFixed(2)}` });
             }
             if (discountPercentage > 0) {
-                currentCalculationDetails += `Desconto: ${discountPercentage.toFixed(2)}%\n`;
+                calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}%` });
             }
             
-            currentCalculationDetails += `Preço Total: R$ ${totalPreco}`;
+            calculationDataForPDF.push({ label: "Preço Total", value: `R$ ${totalPreco}` });
 
             // A string que vai para o HTML (resultado na tela)
-            let resultHtml = currentCalculationDetails.replace(/\n/g, "<br>");
+            let resultHtml = "";
+            calculationDataForPDF.forEach(item => {
+                resultHtml += `${item.label}: ${item.value}<br>`;
+            });
             
             if (additionalInfoText) {
                 resultHtml += `<br><br><b>Informações Adicionais:</b><br>${additionalInfoText.replace(/\n/g, "<br>")}`;
@@ -309,7 +311,7 @@
         }
 
         const logoImg = new Image();
-        logoImg.src = 'logo-calculadora1.png'; 
+        logoImg.src = 'logo-calculadora1.png'; // Verifique se este nome está correto no seu GitHub!
 
         logoImg.onload = () => {
             doc.addImage(logoImg, 'PNG', 10, 10, 50, 20); 
@@ -326,18 +328,32 @@
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
             yPos += 10; 
 
-            // Adiciona os detalhes do cálculo
-            const calculationLines = currentCalculationDetails.split('\n');
-            calculationLines.forEach(line => {
-                doc.text(line, 10, yPos);
-                yPos += 7; 
+            // --- Início da Tabela de Detalhes ---
+            doc.setFontSize(11);
+            const col1X = 15; // Posição X para os rótulos
+            const col2X = 185; // Posição X para os valores (alinhado à direita)
+
+            calculationDataForPDF.forEach(item => {
+                doc.setFont(undefined, 'normal'); // Resetar para normal a cada item
+                if (item.label === "Preço Total") {
+                    doc.line(col1X, yPos - 3, col2X, yPos - 3); // Linha acima do total
+                    yPos += 2; // Pequeno espaço após a linha
+                    doc.setFont(undefined, 'bold'); // Deixa o Preço Total em negrito
+                }
+                
+                doc.text(`${item.label}:`, col1X, yPos);
+                doc.text(item.value, col2X, yPos, { align: "right" });
+                yPos += 7; // Altura da linha
             });
+            // --- Fim da Tabela de Detalhes ---
 
             // Adiciona as informações adicionais, se existirem
             if (additionalInfoText) {
                 yPos += 10; // Espaço antes das informações adicionais
                 doc.setFontSize(12);
+                doc.setFont(undefined, 'bold'); // Negrito para o título
                 doc.text("Informações Adicionais:", 10, yPos);
+                doc.setFont(undefined, 'normal'); // Volta ao normal
                 yPos += 7;
                 // Usa splitTextToSize para quebrar o texto longo em várias linhas
                 const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180); // 180mm de largura
@@ -353,13 +369,20 @@
             
             yPos += 10; // Espaço antes das informações do cliente
             doc.setFontSize(12);
-            doc.text(`Cliente: ${nomeCliente}`, 10, yPos);
+            doc.setFont(undefined, 'bold'); // Negrito para o título
+            doc.text("Cliente:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(nomeCliente, 30, yPos); // Ajuste a posição X para o nome
             yPos += 7;
-            doc.text(`Contato: ${contatoCliente}`, 10, yPos);
+            doc.setFont(undefined, 'bold'); // Negrito para o título
+            doc.text("Contato:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(contatoCliente, 30, yPos); // Ajuste a posição X para o contato
 
             doc.save(fileName); 
         };
 
+        // Fallback para quando a imagem não carrega
         logoImg.onerror = () => {
             let yPos = 10;
             
@@ -373,18 +396,31 @@
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
             yPos += 10;
 
-            // Adiciona os detalhes do cálculo
-            const calculationLines = currentCalculationDetails.split('\n');
-            calculationLines.forEach(line => {
-                doc.text(line, 10, yPos);
-                yPos += 7; 
-            });
+            // --- Início da Tabela de Detalhes (Fallback) ---
+            doc.setFontSize(11);
+            const col1X = 15;
+            const col2X = 185;
 
-            // Adiciona as informações adicionais, se existirem (fallback)
+            calculationDataForPDF.forEach(item => {
+                doc.setFont(undefined, 'normal');
+                if (item.label === "Preço Total") {
+                    doc.line(col1X, yPos - 3, col2X, yPos - 3);
+                    yPos += 2;
+                    doc.setFont(undefined, 'bold');
+                }
+                
+                doc.text(`${item.label}:`, col1X, yPos);
+                doc.text(item.value, col2X, yPos, { align: "right" });
+                yPos += 7;
+            });
+            // --- Fim da Tabela de Detalhes (Fallback) ---
+
             if (additionalInfoText) {
                 yPos += 10;
                 doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
                 doc.text("Informações Adicionais:", 10, yPos);
+                doc.setFont(undefined, 'normal');
                 yPos += 7;
                 const additionalInfoLines = doc.splitTextToSize(additionalInfoText, 180);
                 additionalInfoLines.forEach(line => {
@@ -393,15 +429,20 @@
                 });
             }
 
-            // Adiciona informações do cliente (fallback)
             const nomeCliente = document.getElementById('clientName').value;
             const contatoCliente = document.getElementById('clientContact').value;
             
             yPos += 10;
             doc.setFontSize(12);
-            doc.text(`Cliente: ${nomeCliente}`, 10, yPos);
+            doc.setFont(undefined, 'bold');
+            doc.text("Cliente:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(nomeCliente, 30, yPos);
             yPos += 7;
-            doc.text(`Contato: ${contatoCliente}`, 10, yPos);
+            doc.setFont(undefined, 'bold');
+            doc.text("Contato:", 10, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(contatoCliente, 30, yPos);
 
             doc.save(fileName); 
         };
