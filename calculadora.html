@@ -103,6 +103,18 @@
     <label for="cutPrice"><i class="fas fa-cut"></i> Valor do corte CNC por m² (R$):</label>
     <input type="number" id="cutPrice" placeholder="Insira o valor do corte" value="50">
 
+    <label for="sandingCost"><i class="fas fa-brush"></i> Custo de Lixamento (R$):</label>
+    <input type="number" id="sandingCost" placeholder="Opcional">
+
+    <label for="finishingCost"><i class="fas fa-paint-roller"></i> Custo de Acabamento (R$):</label>
+    <input type="number" id="finishingCost" placeholder="Opcional">
+
+    <label for="shippingCost"><i class="fas fa-truck"></i> Custo de Frete (R$):</label>
+    <input type="number" id="shippingCost" placeholder="Opcional">
+    
+    <label for="discountPercentage"><i class="fas fa-percent"></i> Desconto (%):</label>
+    <input type="number" id="discountPercentage" placeholder="Opcional (ex: 10 para 10%)">
+
     <label for="clientName"><i class="fas fa-user"></i> Nome do Cliente:</label>
     <input type="text" id="clientName" placeholder="Insira o nome do cliente">
 
@@ -147,6 +159,13 @@
         const inputLargura = parseFloat(document.getElementById('width').value);
         const inputAltura = parseFloat(document.getElementById('height').value);
         const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
+        
+        // Novos campos de custo e desconto
+        const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
+        const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
+        const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+        const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
+
         const nomeCliente = document.getElementById('clientName').value;
         const contatoCliente = document.getElementById('clientContact').value; 
 
@@ -163,20 +182,49 @@
             const precoPorM2 = materialInfo.preco / areaChapa;
             const totalPrecoMaterial = areaUsada * precoPorM2;
             const totalPrecoCorte = areaUsada * precoCortePorMetroQuadrado;
-            const totalPreco = (totalPrecoMaterial + totalPrecoCorte).toFixed(2);
+            
+            // Subtotal antes dos custos adicionais e desconto
+            let subtotal = totalPrecoMaterial + totalPrecoCorte;
+
+            // Adicionar custos adicionais
+            subtotal += sandingCost;
+            subtotal += finishingCost;
+            subtotal += shippingCost;
+
+            // Aplicar desconto
+            if (discountPercentage > 0) {
+                subtotal = subtotal * (1 - discountPercentage / 100);
+            }
+
+            const totalPreco = subtotal.toFixed(2);
 
             const pesoPorM2 = materialInfo.peso / areaChapa;
             const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2);
 
+            // Montar a string currentCalculation com os novos detalhes
             currentCalculation =
                 `Material: ${material}\n` +
                 `Área Utilizada: ${areaUsada.toFixed(4)} m²\n` +
                 `Peso Estimado: ${pesoCalculado} kg\n` +
                 `Preço do Material: R$ ${totalPrecoMaterial.toFixed(2)}\n` +
-                `Preço do Corte: R$ ${totalPrecoCorte.toFixed(2)}\n` +
-                `Preço Total: R$ ${totalPreco}\n\n` +
-                `Cliente: ${nomeCliente}\n` +
-                `Contato: ${contatoCliente}`;
+                `Preço do Corte: R$ ${totalPrecoCorte.toFixed(2)}\n`;
+            
+            if (sandingCost > 0) {
+                currentCalculation += `Custo de Lixamento: R$ ${sandingCost.toFixed(2)}\n`;
+            }
+            if (finishingCost > 0) {
+                currentCalculation += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}\n`;
+            }
+            if (shippingCost > 0) {
+                currentCalculation += `Custo de Frete: R$ ${shippingCost.toFixed(2)}\n`;
+            }
+            if (discountPercentage > 0) {
+                currentCalculation += `Desconto: ${discountPercentage.toFixed(2)}%\n`;
+            }
+            
+            currentCalculation += `Preço Total: R$ ${totalPreco}\n\n` +
+                                  `Cliente: ${nomeCliente}\n` +
+                                  `Contato: ${contatoCliente}`;
 
             document.getElementById('result').innerHTML = currentCalculation.replace(/\n/g, "<br>");
             document.getElementById('generatePDF').style.display = 'block';
@@ -190,14 +238,12 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // 1. Obter e formatar a data atual do orçamento
         const dataOrcamento = new Date();
         const diaOrcamento = String(dataOrcamento.getDate()).padStart(2, '0');
-        const mesOrcamento = String(dataOrcamento.getMonth() + 1).padStart(2, '0'); // Mês é 0-indexed
+        const mesOrcamento = String(dataOrcamento.getMonth() + 1).padStart(2, '0');
         const anoOrcamento = dataOrcamento.getFullYear();
         const dataFormatadaOrcamento = `${diaOrcamento}/${mesOrcamento}/${anoOrcamento}`;
 
-        // 2. Calcular a data de expiração (15 dias depois)
         const dataExpiracao = new Date();
         dataExpiracao.setDate(dataOrcamento.getDate() + 15);
         const diaExpiracao = String(dataExpiracao.getDate()).padStart(2, '0');
@@ -226,11 +272,10 @@
             yPos += 10; 
 
             doc.setFontSize(12);
-            // Adicionar as datas ao PDF
             doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
             yPos += 7;
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
-            yPos += 10; // Espaço extra antes dos detalhes do cálculo
+            yPos += 10; 
 
             const lines = currentCalculation.split('\n');
             lines.forEach(line => {
@@ -248,7 +293,6 @@
             yPos += 10;
 
             doc.setFontSize(12);
-            // Adicionar as datas ao PDF mesmo sem a imagem
             doc.text(`Data do Orçamento: ${dataFormatadaOrcamento}`, 10, yPos);
             yPos += 7;
             doc.text(`Expira em: ${dataFormatadaExpiracao}`, 10, yPos);
