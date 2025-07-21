@@ -221,15 +221,14 @@
             const totalPrecoMaterial = areaUsada * precoPorM2;
             const totalPrecoCorte = areaUsada * precoCortePorMetroQuadrado;
             
-            let subtotal = totalPrecoMaterial + totalPrecoCorte;
-
-            subtotal += sandingCost;
-            subtotal += finishingCost;
-            subtotal += shippingCost;
-            subtotal += additionalServiceValue; 
+            let subtotalBeforeDiscount = totalPrecoMaterial + totalPrecoCorte + sandingCost + finishingCost + shippingCost + additionalServiceValue;
+            
+            let discountAmount = 0;
+            let subtotal = subtotalBeforeDiscount;
 
             if (discountPercentage > 0) {
-                subtotal = subtotal * (1 - discountPercentage / 100);
+                discountAmount = subtotalBeforeDiscount * (discountPercentage / 100);
+                subtotal = subtotalBeforeDiscount - discountAmount;
             }
 
             const totalPreco = subtotal.toFixed(2);
@@ -258,8 +257,9 @@
                 const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
                 calculationDataForPDF.push({ label: serviceLabel, value: `R$ ${additionalServiceValue.toFixed(2)}` });
             }
+            // MODIFICAÇÃO AQUI: Adiciona o valor do desconto em reais
             if (discountPercentage > 0) {
-                calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}%` });
+                calculationDataForPDF.push({ label: "Desconto", value: `${discountPercentage.toFixed(2)}% (R$ ${discountAmount.toFixed(2)})` });
             }
             
             calculationDataForPDF.push({ label: "Preço Total", value: `R$ ${totalPreco}` });
