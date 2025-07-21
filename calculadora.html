@@ -44,7 +44,7 @@
       color: #007bff; /* Cor do ícone */
     }
 
-    input, select {
+    input, select, textarea { /* Adicionado textarea aqui */
       width: 100%;
       max-width: 100%;
       padding: 10px;
@@ -115,6 +115,11 @@
     <label for="discountPercentage"><i class="fas fa-percent"></i> Desconto (%):</label>
     <input type="number" id="discountPercentage" placeholder="Opcional (ex: 10 para 10%)">
 
+    <label for="customTitle"><i class="fas fa-heading"></i> Título Personalizado:</label>
+    <input type="text" id="customTitle" placeholder="Ex: Orçamento Projeto XYZ (opcional)">
+
+    <label for="additionalInfo"><i class="fas fa-info-circle"></i> Informações Adicionais:</label>
+    <textarea id="additionalInfo" placeholder="Qualquer informação extra que queira adicionar (opcional)" rows="4"></textarea>
     <label for="clientName"><i class="fas fa-user"></i> Nome do Cliente:</label>
     <input type="text" id="clientName" placeholder="Insira o nome do cliente">
 
@@ -140,6 +145,8 @@
     };
 
     let currentCalculation = '';
+    let customTitleText = ''; // Variável para armazenar o título personalizado
+    let additionalInfoText = ''; // Variável para armazenar as informações adicionais
 
     function updateMaterialInfo() {
         const material = document.getElementById('material').value;
@@ -160,7 +167,6 @@
         const inputAltura = parseFloat(document.getElementById('height').value);
         const precoCortePorMetroQuadrado = parseFloat(document.getElementById('cutPrice').value);
         
-        // Novos campos de custo e desconto
         const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
         const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
         const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
@@ -168,6 +174,10 @@
 
         const nomeCliente = document.getElementById('clientName').value;
         const contatoCliente = document.getElementById('clientContact').value; 
+
+        // Captura os valores dos novos campos
+        customTitleText = document.getElementById('customTitle').value.trim();
+        additionalInfoText = document.getElementById('additionalInfo').value.trim();
 
         if (
             !isNaN(inputLargura) && 
@@ -183,15 +193,12 @@
             const totalPrecoMaterial = areaUsada * precoPorM2;
             const totalPrecoCorte = areaUsada * precoCortePorMetroQuadrado;
             
-            // Subtotal antes dos custos adicionais e desconto
             let subtotal = totalPrecoMaterial + totalPrecoCorte;
 
-            // Adicionar custos adicionais
             subtotal += sandingCost;
             subtotal += finishingCost;
             subtotal += shippingCost;
 
-            // Aplicar desconto
             if (discountPercentage > 0) {
                 subtotal = subtotal * (1 - discountPercentage / 100);
             }
@@ -201,7 +208,7 @@
             const pesoPorM2 = materialInfo.peso / areaChapa;
             const pesoCalculado = (areaUsada * pesoPorM2).toFixed(2);
 
-            // Montar a string currentCalculation com os novos detalhes
+            // Montar a string currentCalculation
             currentCalculation =
                 `Material: ${material}\n` +
                 `Área Utilizada: ${areaUsada.toFixed(4)} m²\n` +
@@ -222,8 +229,14 @@
                 currentCalculation += `Desconto: ${discountPercentage.toFixed(2)}%\n`;
             }
             
-            currentCalculation += `Preço Total: R$ ${totalPreco}\n\n` +
-                                  `Cliente: ${nomeCliente}\n` +
+            currentCalculation += `Preço Total: R$ ${totalPreco}\n\n`;
+
+            // Adiciona as informações adicionais se existirem
+            if (additionalInfoText) {
+                currentCalculation += `Informações Adicionais:\n${additionalInfoText}\n\n`;
+            }
+
+            currentCalculation += `Cliente: ${nomeCliente}\n` +
                                   `Contato: ${contatoCliente}`;
 
             document.getElementById('result').innerHTML = currentCalculation.replace(/\n/g, "<br>");
@@ -267,6 +280,13 @@
 
             let yPos = 40; 
 
+            // Adiciona o título personalizado, se existir
+            if (customTitleText) {
+                doc.setFontSize(14); // Tamanho um pouco menor que o título principal
+                doc.text(customTitleText, 10, yPos);
+                yPos += 10;
+            }
+
             doc.setFontSize(16);
             doc.text("Orçamento de Corte CNC", 10, yPos); 
             yPos += 10; 
@@ -279,8 +299,10 @@
 
             const lines = currentCalculation.split('\n');
             lines.forEach(line => {
-                doc.text(line, 10, yPos);
-                yPos += 7; 
+                // Para lidar com o texto longo do campo de informações adicionais
+                const splitText = doc.splitTextToSize(line, 180); // 180mm de largura para o texto
+                doc.text(splitText, 10, yPos);
+                yPos += (splitText.length * 7); // Incrementa Y baseado no número de linhas geradas pelo splitTextToSize
             });
 
             doc.save(fileName); 
@@ -288,6 +310,13 @@
 
         logoImg.onerror = () => {
             let yPos = 10;
+            
+            if (customTitleText) {
+                doc.setFontSize(14);
+                doc.text(customTitleText, 10, yPos);
+                yPos += 10;
+            }
+
             doc.setFontSize(16);
             doc.text("Orçamento de Corte CNC", 10, yPos);
             yPos += 10;
@@ -300,8 +329,9 @@
 
             const lines = currentCalculation.split('\n');
             lines.forEach(line => {
-                doc.text(line, 10, yPos);
-                yPos += 7;
+                const splitText = doc.splitTextToSize(line, 180);
+                doc.text(splitText, 10, yPos);
+                yPos += (splitText.length * 7);
             });
             doc.save(fileName); 
         };
