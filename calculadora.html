@@ -534,8 +534,9 @@
         const addContentToPdf = () => {
             // Imagem do logo (apenas na primeira página)
             doc.addImage(logoImg, 'PNG', 10, yPos, 50, 20);
-            yPos += 25; // Espaço após o logo
+            yPos += 20; // Ajuste para 20px de espaço após o logo
 
+            // Informações da Empresa (ao lado do logo)
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
             const empresaInfoX = 70;
@@ -547,8 +548,11 @@
             empresaInfoY += 5;
             doc.text("WhatsApp: (51) 9 2003-9698", empresaInfoX, empresaInfoY);
 
-            // Ajusta yPos para começar o conteúdo principal abaixo do logo/informações da empresa
-            yPos = Math.max(yPos, empresaInfoY + 5); // Garante que yPos está abaixo de todas as infos do cabeçalho
+            // Garante que yPos está abaixo de todas as infos do cabeçalho (logo + informações da empresa)
+            // Se o logo for maior que as infos da empresa, yPos já estará mais baixo
+            // Se as infos da empresa forem mais baixas que o logo, yPos ajusta para baixo delas
+            yPos = Math.max(yPos, empresaInfoY + 5);
+
 
             checkPageBreak(20); // Espaço para o título e datas
             doc.setFontSize(16);
@@ -718,7 +722,21 @@
 
         logoImg.onerror = () => {
             console.warn("Não foi possível carregar o logo. Gerando PDF sem o logo.");
-            addContentToPdf(); // Gera o PDF mesmo que o logo não carregue
+            // No caso de erro no logo, iniciamos yPos direto no margin superior
+            yPos = margin;
+            // E as informações da empresa também precisam ser ajustadas para não ficarem "soltas"
+            // Se o logo não carrega, as infos da empresa podem começar mais no topo
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            let empresaInfoYFallback = margin + 5; // Começa um pouco abaixo da margem superior
+            doc.text("Site: www.vetorcut.com.br", margin, empresaInfoYFallback); // Muda para o canto esquerdo
+            empresaInfoYFallback += 5;
+            doc.text("Atendente: Jefferson Machado", margin, empresaInfoYFallback);
+            empresaInfoYFallback += 5;
+            doc.text("WhatsApp: (51) 9 2003-9698", margin, empresaInfoYFallback);
+            yPos = empresaInfoYFallback + 10; // Ajusta yPos para começar o conteúdo abaixo das infos da empresa
+
+            addContentToPdf();
         };
     }
 
