@@ -68,7 +68,7 @@
         transform: none; /* Remover transformação */
         margin-right: 5px; /* Espaço entre ícone e texto */
     }
-    .service-group input {
+    .service-group input, .service-group select { /* Adicionado select aqui */
         flex-grow: 1;
     }
     .service-group .service-value {
@@ -140,6 +140,23 @@
     #addMaterialItem:hover {
         background-color: #218838;
     }
+    /* Adicionado para alinhar o custo de frete com o tipo de serviço */
+    .shipping-group {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    .shipping-group .form-field { /* Wrapper para label e input/select */
+        flex-grow: 1;
+    }
+    .shipping-group .form-field label {
+        padding-left: 0;
+    }
+    .shipping-group .form-field label i {
+        position: static;
+        transform: none;
+        margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -198,8 +215,23 @@
     <label for="finishingCost"><i class="fas fa-paint-roller"></i> Custo de Acabamento (R$):</label>
     <input type="number" id="finishingCost" placeholder="Opcional">
 
-    <label for="shippingCost"><i class="fas fa-truck"></i> Custo de Frete (R$):</label>
-    <input type="number" id="shippingCost" placeholder="Opcional">
+    <div class="shipping-group">
+        <div class="form-field">
+            <label for="shippingCost"><i class="fas fa-truck"></i> Custo de Frete (R$):</label>
+            <input type="number" id="shippingCost" placeholder="Opcional">
+        </div>
+        <div class="form-field">
+            <label for="shippingServiceType"><i class="fas fa-shipping-fast"></i> Tipo de Serviço de Entrega:</label>
+            <select id="shippingServiceType">
+                <option value="">Selecione</option>
+                <option value="Correios">Correios</option>
+                <option value="Melhor Envio">Melhor Envio</option>
+                <option value="Transportadora Sao Miguel">Transportadora São Miguel</option>
+                <option value="Transportadora JadLog">Transportadora JadLog</option>
+                <option value="Outro">Outro</option>
+            </select>
+        </div>
+    </div>
 
     <label for="additionalServiceName"><i class="fas fa-plus-circle"></i> Serviço Adicional:</label>
     <div class="service-group">
@@ -414,6 +446,7 @@
         const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
         const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
         const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+        const shippingServiceType = document.getElementById('shippingServiceType').value; // Novo campo
         const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
 
         const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
@@ -471,7 +504,11 @@
         }
 
         if (shippingCost > 0) {
-            resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}<br>`;
+            resultHtml += `Custo de Frete: R$ ${shippingCost.toFixed(2)}`;
+            if (shippingServiceType) { // Adiciona o tipo de serviço se selecionado
+                resultHtml += ` (${shippingServiceType})`;
+            }
+            resultHtml += `<br>`;
         }
 
         resultHtml += `<b>Preço Total Final: R$ ${totalPrecoDisplay}</b><br>`;
@@ -629,6 +666,7 @@
             const sandingCost = parseFloat(document.getElementById('sandingCost').value) || 0;
             const finishingCost = parseFloat(document.getElementById('finishingCost').value) || 0;
             const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+            const shippingServiceType = document.getElementById('shippingServiceType').value; // Novo campo para o PDF
             const discountPercentage = parseFloat(document.getElementById('discountPercentage').value) || 0;
             const additionalServiceName = document.getElementById('additionalServiceName').value.trim();
             const additionalServiceValue = parseFloat(document.getElementById('additionalServiceValue').value) || 0;
@@ -670,7 +708,11 @@
             if (shippingCost > 0) {
                 checkPageBreak(7);
                 doc.setFont(undefined, 'normal');
-                doc.text("Custo de Frete:", col1X, yPos);
+                let shippingText = "Custo de Frete:";
+                if (shippingServiceType) {
+                    shippingText += ` (${shippingServiceType})`;
+                }
+                doc.text(shippingText, col1X, yPos);
                 doc.text(`R$ ${shippingCost.toFixed(2)}`, col2X, yPos, { align: "right" });
                 yPos += 7;
             }
