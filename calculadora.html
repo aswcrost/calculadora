@@ -495,7 +495,8 @@
             resultHtml += `Custo de Acabamento: R$ ${finishingCost.toFixed(2)}<br>`;
         }
         if (additionalServiceValue > 0 || additionalServiceName) {
-            const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
+            // AQUI ESTÁ A MUDANÇA: o ":" foi movido para dentro da string no caso de additionalServiceName existir
+            const serviceLabel = additionalServiceName ? `Serv. Adicional: (${additionalServiceName})` : 'Serviço Adicional';
             resultHtml += `${serviceLabel}: R$ ${additionalServiceValue.toFixed(2)}<br>`;
         }
 
@@ -688,8 +689,10 @@
             if (additionalServiceValue > 0 || additionalServiceName) {
                 checkPageBreak(7);
                 doc.setFont(undefined, 'normal');
-                const serviceLabel = additionalServiceName ? `Serv. Adicional (${additionalServiceName})` : 'Serviço Adicional';
-                doc.text(`${serviceLabel}:`, col1X, yPos);
+                // AQUI ESTÁ A MUDANÇA: o ":" foi movido para dentro da string no caso de additionalServiceName existir
+                // E REMOVEMOS O ":" NO FINAL DA LINHA
+                const serviceLabel = additionalServiceName ? `Serv. Adicional: (${additionalServiceName})` : 'Serviço Adicional';
+                doc.text(`${serviceLabel}`, col1X, yPos); // Removido o ":" daqui
                 doc.text(`R$ ${additionalServiceValue.toFixed(2)}`, col2X, yPos, { align: "right" });
                 yPos += 7;
             }
